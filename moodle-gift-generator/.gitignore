@@ -1,0 +1,7 @@
+.env
+*.exe
+*.bin
+/server
+/uploads
+__debug_bin*
+.DS_Store
