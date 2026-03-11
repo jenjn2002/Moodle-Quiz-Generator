@@ -20,7 +20,6 @@ WORKDIR /app
 
 COPY --from=builder /app/server .
 COPY --from=builder /app/frontend ./frontend
-COPY --from=builder /app/migrations ./migrations
 
 RUN mkdir -p /app/uploads
 
