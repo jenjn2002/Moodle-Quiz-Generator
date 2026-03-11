@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/microsoft"
 	"github.com/youorg/moodle-gift-generator/internal/db"
 	"github.com/youorg/moodle-gift-generator/internal/models"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/microsoft"
 )
 
 var oauthConfig *oauth2.Config
@@ -70,7 +70,6 @@ func GetUserInfo(token *oauth2.Token) (*MSUserInfo, error) {
 	if err := json.Unmarshal(body, &info); err != nil {
 		return nil, err
 	}
-
 	if info.Mail == "" {
 		info.Mail = info.UserPrincipalName
 	}
@@ -84,21 +83,16 @@ func CreateUserSession(w http.ResponseWriter, msUser *MSUserInfo) error {
 		Name:      msUser.DisplayName,
 		AvatarURL: fmt.Sprintf("https://ui-avatars.com/api/?name=%s&background=6366f1&color=fff", msUser.DisplayName),
 	}
-
 	if err := db.UpsertUser(user); err != nil {
 		return fmt.Errorf("upsert user: %w", err)
 	}
-
-	// Generate session token
 	b := make([]byte, 32)
 	rand.Read(b)
 	token := base64.URLEncoding.EncodeToString(b)
 	expiresAt := time.Now().Add(24 * time.Hour)
-
 	if err := db.CreateSession(user.ID, token, expiresAt); err != nil {
 		return fmt.Errorf("create session: %w", err)
 	}
-
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    token,
@@ -162,10 +156,9 @@ func UserFromCtx(ctx context.Context) *models.User {
 	return u
 }
 
-// ─── Local (username/password) auth ─────────────────────────────────────────
+// ─── Local (username/password) auth ──────────────────────────────────────────
 
-// HashPassword returns "sha256:<hex>" — simple, no bcrypt dep needed.
-// Replace with bcrypt before going to production.
+// HashPassword returns "sha256:<hex>".
 func HashPassword(password string) string {
 	sum := sha256.Sum256([]byte(password))
 	return "sha256:" + hex.EncodeToString(sum[:])
@@ -184,23 +177,21 @@ func EnsureLocalAdmin() {
 	}
 	hash := HashPassword(password)
 	if _, err := db.UpsertLocalUser(email, "Administrator", hash); err != nil {
-		fmt.Printf("⚠️  Could not ensure admin account: %v
-", err)
+		fmt.Printf("WARNING: Could not ensure admin account: %v\n", err)
 	} else {
-		fmt.Println("✅ Local admin account ready (username: admin)")
+		fmt.Println("Local admin account ready (username: admin)")
 	}
 }
 
-// LocalLogin validates username+password and creates a session cookie.
+// LocalLogin validates username+password and sets a session cookie.
 func LocalLogin(w http.ResponseWriter, username, password string) error {
 	user, hash, err := db.GetUserByEmail(username)
 	if err != nil {
-		return errors.New("tên đăng nhập hoặc mật khẩu không đúng")
+		return errors.New("ten dang nhap hoac mat khau khong dung")
 	}
 	if !strings.HasPrefix(hash, "sha256:") || !CheckPassword(password, hash) {
-		return errors.New("tên đăng nhập hoặc mật khẩu không đúng")
+		return errors.New("ten dang nhap hoac mat khau khong dung")
 	}
-
 	b := make([]byte, 32)
 	rand.Read(b)
 	token := base64.URLEncoding.EncodeToString(b)
@@ -219,7 +210,7 @@ func LocalLogin(w http.ResponseWriter, username, password string) error {
 	return nil
 }
 
-// ChangePassword updates the local password for a user identified by email/username.
+// ChangePassword updates the local password for a given username.
 func ChangePassword(username, newPassword string) error {
 	hash := HashPassword(newPassword)
 	_, err := db.DB.Exec(
