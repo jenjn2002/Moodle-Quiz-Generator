@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GIFT Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & VARIABLES ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #080c14;
+  --surface: #0f172a;
+  --surface2: #111827;
+  --surface3: #1a2333;
+  --border: #1e293b;
+  --border2: #243044;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59,130,246,0.2);
+  --accent2: #8b5cf6;
+  --success: #10b981;
+  --warn: #f59e0b;
+  --error: #ef4444;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Sora', sans-serif;
+  --radius: 12px;
+  --sidebar: 260px;
+}
+
+html, body { height: 100%; font-family: var(--sans); background: var(--bg); color: var(--text); }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ===== LAYOUT ===== */
+.layout { display: flex; height: 100vh; overflow: hidden; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: var(--sidebar);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 0 16px var(--accent-glow);
+  flex-shrink: 0;
+}
+.logo-name { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+.logo-ver { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+
+.sidebar-nav { flex: 1; overflow-y: auto; padding: 12px 10px; }
+
+.nav-section { margin-bottom: 20px; }
+.nav-label {
+  font-size: 10px; font-family: var(--mono); font-weight: 500;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px;
+  padding: 0 8px; margin-bottom: 6px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 8px;
+  font-size: 13.5px; font-weight: 500; color: var(--text2);
+  cursor: pointer; transition: all 0.15s;
+  border: none; background: none; width: 100%; text-align: left;
+}
+.nav-item:hover { background: var(--surface3); color: var(--text); }
+.nav-item.active {
+  background: rgba(59,130,246,0.12);
+  color: #60a5fa;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.nav-item .icon { font-size: 16px; flex-shrink: 0; }
+.nav-item .badge {
+  margin-left: auto; font-size: 10px; font-family: var(--mono);
+  background: var(--surface3); color: var(--text3);
+  padding: 1px 6px; border-radius: 10px;
+}
+
+.bank-list { padding: 0 4px 8px; }
+.bank-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 7px; cursor: pointer;
+  font-size: 12.5px; color: var(--text3); transition: all 0.15s;
+  position: relative;
+}
+.bank-item:hover { background: var(--surface3); color: var(--text2); }
+.bank-item.active { color: #60a5fa; background: rgba(59,130,246,0.08); }
+.bank-item .bank-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border2); flex-shrink: 0;
+}
+.bank-item.active .bank-dot { background: var(--accent); }
+.bank-item .bank-count { margin-left: auto; font-family: var(--mono); font-size: 10px; }
+.bank-item .bank-del {
+  display: none; background: none; border: none; cursor: pointer;
+  color: var(--error); font-size: 14px; padding: 0 2px;
+}
+.bank-item:hover .bank-del { display: block; }
+
+.btn-new-bank {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 10px; border-radius: 7px;
+  font-size: 12px; color: var(--text3); cursor: pointer;
+  background: none; border: 1px dashed var(--border2);
+  width: calc(100% - 8px); margin: 0 4px;
+  transition: all 0.15s; font-family: var(--sans);
+}
+.btn-new-bank:hover { border-color: var(--accent); color: var(--accent); }
+
+.sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+.user-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 8px; border-radius: 8px;
+  cursor: pointer; transition: 0.15s;
+}
+.user-card:hover { background: var(--surface3); }
+.user-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+  overflow: hidden;
+}
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.user-name { font-size: 13px; font-weight: 600; }
+.user-email { font-size: 11px; color: var(--text3); }
+.logout-btn {
+  margin-left: auto; padding: 4px 8px;
+  background: none; border: 1px solid var(--border2);
+  border-radius: 6px; font-size: 11px; color: var(--text3);
+  cursor: pointer; transition: 0.15s; white-space: nowrap;
+}
+.logout-btn:hover { border-color: var(--error); color: var(--error); }
+
+/* ===== MAIN CONTENT ===== */
+.main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+.topbar {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px;
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.page-title { font-size: 18px; font-weight: 700; }
+.page-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+/* ===== VIEWS ===== */
+.view { display: none; flex: 1; overflow: hidden; }
+.view.active { display: flex; flex-direction: column; overflow: hidden; }
+
+/* ===== GENERATE VIEW ===== */
+.gen-layout {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0; flex: 1; overflow: hidden;
+}
+
+.panel {
+  display: flex; flex-direction: column;
+  overflow: hidden; position: relative;
+}
+.panel + .panel { border-left: 1px solid var(--border); }
+.panel-header {
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+.panel-title { font-size: 13px; font-weight: 600; }
+.panel-actions { margin-left: auto; display: flex; gap: 6px; }
+.panel-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+
+textarea {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border2); border-radius: 10px;
+  padding: 14px; color: var(--text); font-size: 13.5px;
+  line-height: 1.7; resize: none; font-family: var(--sans);
+  transition: border-color 0.2s;
+}
+textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+textarea::placeholder { color: var(--text3); }
+
+.source-area { flex: 1; min-height: 0; }
+
+/* Config row */
+.config-row {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+  flex-shrink: 0;
+}
+
+.config-group { display: flex; flex-direction: column; gap: 4px; }
+.config-label { font-size: 10px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+
+select, .select {
+  background: var(--surface3); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 6px 10px; color: var(--text);
+  font-size: 12.5px; cursor: pointer; font-family: var(--sans);
+  transition: 0.15s;
+}
+select:focus { outline: none; border-color: var(--accent); }
+
+.type-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 500; cursor: pointer;
+  border: 1px solid var(--border2); color: var(--text3);
+  transition: all 0.15s; user-select: none;
+}
+.chip:hover { border-color: var(--accent); color: var(--text); }
+.chip.selected { background: rgba(59,130,246,0.15); border-color: var(--accent); color: #60a5fa; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 16px; border-radius: 9px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  border: none; transition: all 0.2s; font-family: var(--sans);
+}
+.btn-primary {
+  background: var(--accent); color: white;
+  box-shadow: 0 2px 12px rgba(59,130,246,0.3);
+}
+.btn-primary:hover:not(:disabled) { background: #2563eb; box-shadow: 0 4px 20px rgba(59,130,246,0.45); transform: translateY(-1px); }
+.btn-secondary { background: var(--surface3); color: var(--text2); border: 1px solid var(--border2); }
+.btn-secondary:hover { background: var(--surface2); color: var(--text); }
+.btn-ghost { background: none; color: var(--text2); border: 1px solid var(--border2); }
+.btn-ghost:hover { background: var(--surface3); color: var(--text); }
+.btn-danger { background: rgba(239,68,68,0.1); color: var(--error); border: 1px solid rgba(239,68,68,0.2); }
+.btn-danger:hover { background: rgba(239,68,68,0.2); }
+.btn-success { background: var(--success); color: white; }
+.btn-success:hover { background: #059669; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-sm { padding: 5px 10px; font-size: 11.5px; }
+.btn-icon { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+
+/* Output */
+.output-area {
+  flex: 1; overflow-y: auto; padding: 16px 20px;
+}
+.output-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; color: var(--text3); text-align: center; gap: 10px;
+}
+.output-empty .big-icon { font-size: 40px; opacity: 0.3; }
+.output-empty p { font-size: 13px; max-width: 200px; line-height: 1.6; }
+
+.q-card {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px 16px;
+  margin-bottom: 10px; transition: 0.15s;
+  animation: fadeSlide 0.3s ease both;
+}
+.q-card:hover { border-color: var(--border); }
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.q-card-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.q-type-badge {
+  font-size: 10px; font-family: var(--mono);
+  padding: 2px 7px; border-radius: 4px; flex-shrink: 0;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.badge-mc { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.badge-tf { background: rgba(16,185,129,0.15); color: #34d399; }
+.badge-sa { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.badge-es { background: rgba(139,92,246,0.15); color: #a78bfa; }
+.badge-mt { background: rgba(236,72,153,0.15); color: #f472b6; }
+
+.q-title { font-size: 13px; font-weight: 600; flex: 1; line-height: 1.4; }
+.q-actions { margin-left: auto; display: flex; gap: 4px; opacity: 0; transition: 0.15s; }
+.q-card:hover .q-actions { opacity: 1; }
+
+.q-gift {
+  font-family: var(--mono); font-size: 11.5px;
+  color: var(--text3); line-height: 1.7;
+  background: var(--surface3); border-radius: 6px;
+  padding: 8px 10px; margin-top: 8px;
+  white-space: pre-wrap; word-break: break-all;
+  max-height: 100px; overflow-y: auto;
+}
+.q-gift.expanded { max-height: none; }
+
+/* GIFT text view */
+.gift-raw {
+  font-family: var(--mono); font-size: 12px; color: #93c5fd;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 16px; line-height: 1.8;
+  white-space: pre-wrap; word-break: break-word;
+  flex: 1; overflow-y: auto;
+  min-height: 0;
+}
+
+/* ===== QUESTIONS VIEW ===== */
+.q-toolbar {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 9px; padding: 7px 12px; flex: 1; min-width: 200px;
+}
+.search-box input {
+  background: none; border: none; color: var(--text);
+  font-size: 13px; outline: none; width: 100%; font-family: var(--sans);
+}
+.search-box input::placeholder { color: var(--text3); }
+.search-icon { color: var(--text3); font-size: 15px; }
+
+.q-grid { display: flex; flex-direction: column; gap: 8px; padding: 16px 20px; overflow-y: auto; flex: 1; }
+.q-row {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 12px 16px;
+  display: flex; align-items: flex-start; gap: 12px;
+  transition: 0.15s; cursor: default;
+  animation: fadeSlide 0.2s ease both;
+}
+.q-row:hover { border-color: var(--border); }
+.q-row-body { flex: 1; min-width: 0; }
+.q-row-title { font-size: 13.5px; font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-row-preview { font-size: 11.5px; color: var(--text3); font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-row-meta { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.q-row-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+/* ===== IMPORT VIEW ===== */
+.import-layout {
+  display: grid; grid-template-columns: 1fr 1fr;
+  flex: 1; overflow: hidden;
+}
+
+.dropzone {
+  border: 2px dashed var(--border2); border-radius: 12px;
+  padding: 32px; text-align: center;
+  transition: all 0.2s; cursor: pointer;
+  margin-bottom: 12px;
+}
+.dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: var(--accent-glow); }
+.dropzone-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.5; }
+.dropzone-text { font-size: 13px; color: var(--text2); }
+.dropzone-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* ===== MODAL ===== */
+.modal-backdrop {
+  display: none; position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 28px; width: 420px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-title { font-size: 17px; font-weight: 700; margin-bottom: 18px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; display: block; }
+.form-input {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border2); border-radius: 8px;
+  padding: 9px 12px; color: var(--text); font-size: 13px;
+  font-family: var(--sans); transition: 0.15s;
+}
+.form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+/* ===== TOAST ===== */
+.toast-container {
+  position: fixed; bottom: 20px; right: 20px; z-index: 200;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  padding: 12px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 500;
+  animation: toastIn 0.3s ease;
+  max-width: 300px;
+  display: flex; align-items: center; gap: 8px;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.toast-success { background: #064e3b; border: 1px solid #065f46; color: #6ee7b7; }
+.toast-error { background: #450a0a; border: 1px solid #7f1d1d; color: #fca5a5; }
+.toast-info { background: #1e3a5f; border: 1px solid #1e40af; color: #93c5fd; }
+
+/* ===== LOADING ===== */
+.spinner {
+  width: 16px; height: 16px; border: 2px solid transparent;
+  border-top-color: currentColor; border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-overlay {
+  display: none; position: absolute; inset: 0;
+  background: rgba(8,12,20,0.7); backdrop-filter: blur(3px);
+  align-items: center; justify-content: center;
+  z-index: 10; flex-direction: column; gap: 14px;
+  border-radius: inherit;
+}
+.loading-overlay.show { display: flex; }
+.loading-text { font-size: 13px; color: var(--text2); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .gen-layout, .import-layout { grid-template-columns: 1fr; }
+  .sidebar { width: 220px; }
+}
+
+/* Empty state */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; color: var(--text3); text-align: center; padding: 40px;
+}
+.empty-state .e-icon { font-size: 48px; opacity: 0.2; margin-bottom: 16px; }
+.empty-state h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: var(--text2); }
+.empty-state p { font-size: 13px; line-height: 1.6; max-width: 260px; }
+
+/* Tabs */
+.tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 20px; flex-shrink: 0; }
+.tab { padding: 10px 16px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text3); border-bottom: 2px solid transparent; transition: 0.15s; }
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Progress bar */
+.progress-bar { height: 3px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.3s; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <div class="logo-name">GIFT Generator</div>
+          <div class="logo-ver">v1.0 · Moodle AI</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-label">Công cụ</div>
+        <button class="nav-item active" onclick="showView('generate')" id="nav-generate">
+          <span class="icon">✨</span> Tạo câu hỏi
+        </button>
+        <button class="nav-item" onclick="showView('import')" id="nav-import">
+          <span class="icon">📥</span> Import GIFT
+        </button>
+        <button class="nav-item" onclick="showView('questions')" id="nav-questions">
+          <span class="icon">📚</span> Ngân hàng câu hỏi
+          <span class="badge" id="total-badge">0</span>
+        </button>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Bộ sưu tập</div>
+        <div class="bank-list" id="bank-list">
+          <!-- Dynamic banks -->
+        </div>
+        <button class="btn-new-bank" onclick="openCreateBank()">
+          <span>＋</span> Tạo bộ mới
+        </button>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card" id="user-card">
+        <div class="user-avatar" id="user-avatar">U</div>
+        <div>
+          <div class="user-name" id="user-name">Loading...</div>
+          <div class="user-email" id="user-email"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-left:auto;">
+          <button onclick="openModal('modal-password')" class="logout-btn" style="white-space:nowrap;">🔐 Đổi MK</button>
+          <a href="/auth/logout" class="logout-btn" onclick="return confirm('Đăng xuất?')" style="text-align:center;">Thoát</a>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- ===== GENERATE VIEW ===== -->
+    <div class="view active" id="view-generate">
+      <div class="topbar">
+        <div>
+          <div class="page-title">✨ Tạo câu hỏi</div>
+          <div class="page-sub">Nhập nội dung → Chọn loại câu hỏi → AI generate GIFT format</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="clearGenerate()">🗑 Xóa</button>
+          <button class="btn btn-primary" id="btn-generate" onclick="generateQuestions()">
+            <span>✨</span> Generate
+          </button>
+        </div>
+      </div>
+
+      <!-- Config -->
+      <div class="config-row">
+        <div class="config-group">
+          <div class="config-label">Loại câu hỏi</div>
+          <div class="type-chips">
+            <div class="chip selected" data-type="multiple_choice" onclick="toggleChip(this)">Trắc nghiệm</div>
+            <div class="chip" data-type="true_false" onclick="toggleChip(this)">Đúng/Sai</div>
+            <div class="chip" data-type="short_answer" onclick="toggleChip(this)">Điền từ</div>
+            <div class="chip" data-type="essay" onclick="toggleChip(this)">Tự luận</div>
+            <div class="chip" data-type="matching" onclick="toggleChip(this)">Nối cặp</div>
+          </div>
+        </div>
+        <div class="config-group">
+          <div class="config-label">Số lượng</div>
+          <select id="q-count">
+            <option value="3">3 câu</option>
+            <option value="5" selected>5 câu</option>
+            <option value="10">10 câu</option>
+            <option value="15">15 câu</option>
+            <option value="20">20 câu</option>
+          </select>
+        </div>
+        <div class="config-group">
+          <div class="config-label">Ngôn ngữ</div>
+          <select id="q-lang">
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="en">🇬🇧 English</option>
+          </select>
+        </div>
+        <div class="config-group">
+          <div class="config-label">Độ khó</div>
+          <select id="q-diff">
+            <option value="easy">Dễ</option>
+            <option value="medium" selected>Vừa</option>
+            <option value="hard">Khó</option>
+          </select>
+        </div>
+        <div class="config-group">
+          <div class="config-label">Lưu vào</div>
+          <select id="q-bank">
+            <option value="">Không lưu vào bộ</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="gen-layout">
+        <!-- Left: Input -->
+        <div class="panel">
+          <div class="panel-header">
+            <span>📄</span>
+            <span class="panel-title">Nội dung nguồn</span>
+            <div class="panel-actions">
+              <button class="btn btn-ghost btn-sm" onclick="openUrlFetch()" title="Lấy nội dung từ URL">🌐 Từ URL</button>
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer" title="Hỗ trợ: PDF, DOCX, TXT, GIFT">
+                📎 Upload
+                <input type="file" id="file-upload" accept=".txt,.gift,.pdf,.docx,.doc" style="display:none" onchange="handleFileUpload(this)">
+              </label>
+            </div>
+          </div>
+          <!-- File info banner -->
+          <div id="file-info-banner" style="display:none;padding:8px 16px;background:rgba(59,130,246,0.08);border-bottom:1px solid rgba(59,130,246,0.15);font-size:11.5px;color:#93c5fd;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            <span id="file-info-icon">📄</span>
+            <span id="file-info-text"></span>
+            <button onclick="clearFileInfo()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#64748b;font-size:14px;">✕</button>
+          </div>
+          <!-- URL fetch bar -->
+          <div id="url-fetch-bar" style="display:none;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0;">
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input id="url-input" type="url" placeholder="https://example.com/article..." class="form-input" style="flex:1;padding:7px 10px;font-size:12.5px;" onkeydown="if(event.key==='Enter')fetchUrl()">
+              <button class="btn btn-primary btn-sm" onclick="fetchUrl()">Lấy nội dung</button>
+              <button class="btn btn-ghost btn-sm" onclick="closeUrlFetch()">✕</button>
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:5px;">⚠️ Chỉ hoạt động với trang không yêu cầu đăng nhập. Nội dung sẽ được trích xuất phía server.</div>
+          </div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:10px;padding:16px;">
+            <textarea id="source-text" placeholder="Dán nội dung tài liệu vào đây...&#10;&#10;Hoặc sử dụng:&#10;📎 Upload — PDF, DOCX, TXT&#10;🌐 Từ URL — lấy nội dung trang web" style="flex:1;min-height:300px;"></textarea>
+          </div>
+        </div>
+
+        <!-- Right: Output -->
+        <div class="panel" style="position:relative">
+          <div class="loading-overlay" id="gen-loading">
+            <div class="spinner" style="width:28px;height:28px;border-width:3px;border-top-color:var(--accent)"></div>
+            <div class="loading-text">Đang phân tích văn bản và tạo câu hỏi...</div>
+          </div>
+          <div class="panel-header">
+            <span>🎯</span>
+            <span class="panel-title">Kết quả</span>
+            <div class="panel-actions" id="output-actions" style="display:none">
+              <button class="btn btn-ghost btn-sm" onclick="copyGIFT()">📋 Copy GIFT</button>
+              <button class="btn btn-success btn-sm" onclick="downloadGIFT()">⬇ Download</button>
+            </div>
+          </div>
+
+          <div class="tab-bar">
+            <div class="tab active" onclick="switchOutputTab('cards', this)">Cards</div>
+            <div class="tab" onclick="switchOutputTab('raw', this)">GIFT Raw</div>
+          </div>
+
+          <div id="output-cards" class="output-area">
+            <div class="output-empty" id="output-placeholder">
+              <div class="big-icon">🤖</div>
+              <p>Nhập nội dung và nhấn <strong>Generate</strong> để tạo câu hỏi GIFT tự động</p>
+            </div>
+            <div id="cards-container"></div>
+          </div>
+
+          <div id="output-raw" style="display:none;flex:1;overflow:hidden;padding:16px 20px;display:flex;flex-direction:column;min-height:0">
+            <pre class="gift-raw" id="raw-output" style="display:none"></pre>
+            <div class="output-empty" id="raw-placeholder">
+              <div class="big-icon">📝</div>
+              <p>GIFT format sẽ xuất hiện ở đây</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== IMPORT VIEW ===== -->
+    <div class="view" id="view-import">
+      <div class="topbar">
+        <div>
+          <div class="page-title">📥 Import GIFT</div>
+          <div class="page-sub">Import câu hỏi từ file GIFT hoặc paste trực tiếp</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" onclick="importGIFT()">📥 Import & Lưu</button>
+        </div>
+      </div>
+
+      <div class="import-layout">
+        <div class="panel">
+          <div class="panel-header">
+            <span>📋</span>
+            <span class="panel-title">Nội dung GIFT</span>
+            <div class="panel-actions">
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+                📎 Upload .gift
+                <input type="file" accept=".gift,.txt,.pdf,.docx" style="display:none" onchange="handleImportFile(this)">
+              </label>
+            </div>
+          </div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="dropzone" id="import-dropzone" onclick="document.getElementById('import-file').click()">
+              <input type="file" id="import-file" accept=".gift,.txt,.pdf,.docx" style="display:none" onchange="handleImportFile(this)">
+              <div class="dropzone-icon">📁</div>
+              <div class="dropzone-text">Kéo thả file vào đây</div>
+              <div class="dropzone-sub">PDF, DOCX, TXT, GIFT — tối đa 20 MB</div>
+            </div>
+
+            <textarea id="import-content" placeholder="Hoặc paste nội dung GIFT vào đây...
+
+Ví dụ:
+::Q1:: Thủ đô của Việt Nam là gì? {
+=Hà Nội
+~TP. Hồ Chí Minh
+~Đà Nẵng
+~Huế
+}
+
+::Q2:: Việt Nam nằm ở khu vực Đông Nam Á. { TRUE }" style="flex:1;min-height:300px;font-family:var(--mono);font-size:12.5px"></textarea>
+
+            <div style="display:flex;gap:10px;align-items:center">
+              <div style="flex:1">
+                <div class="config-label" style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:4px;">LƯU VÀO BỘ</div>
+                <select id="import-bank" style="width:100%">
+                  <option value="">Không lưu vào bộ</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span>👁</span>
+            <span class="panel-title">Preview</span>
+            <span id="import-count" style="font-size:11px;color:var(--text3);margin-left:auto"></span>
+          </div>
+          <div class="panel-body" id="import-preview">
+            <div class="output-empty">
+              <div class="big-icon">👁</div>
+              <p>Preview câu hỏi sẽ hiện ở đây sau khi bạn nhập nội dung GIFT</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== QUESTIONS VIEW ===== -->
+    <div class="view" id="view-questions">
+      <div class="topbar">
+        <div>
+          <div class="page-title">📚 Ngân hàng câu hỏi</div>
+          <div class="page-sub" id="q-bank-subtitle">Tất cả câu hỏi đã lưu</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-export" onclick="exportQuestions()">⬇ Export GIFT</button>
+        </div>
+      </div>
+
+      <div class="q-toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Tìm kiếm câu hỏi..." id="search-input" oninput="debounceSearch()">
+        </div>
+        <select id="filter-type" onchange="loadQuestions()" style="min-width:130px">
+          <option value="">Tất cả loại</option>
+          <option value="multiple_choice">Trắc nghiệm</option>
+          <option value="true_false">Đúng/Sai</option>
+          <option value="short_answer">Điền từ</option>
+          <option value="essay">Tự luận</option>
+          <option value="matching">Nối cặp</option>
+        </select>
+      </div>
+
+      <div class="q-grid" id="q-list">
+        <div class="empty-state">
+          <div class="e-icon">📚</div>
+          <h3>Chưa có câu hỏi</h3>
+          <p>Tạo câu hỏi mới bằng AI hoặc import file GIFT</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL: Create Bank -->
+<div class="modal-backdrop" id="modal-bank">
+  <div class="modal">
+    <div class="modal-title">📁 Tạo bộ câu hỏi mới</div>
+    <div class="form-group">
+      <label class="form-label">Tên bộ câu hỏi *</label>
+      <input class="form-input" id="bank-name" placeholder="VD: Chương 1 - Đại số tuyến tính" onkeydown="if(event.key==='Enter')createBank()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mô tả</label>
+      <input class="form-input" id="bank-desc" placeholder="Mô tả ngắn về bộ câu hỏi này">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-bank')">Hủy</button>
+      <button class="btn btn-primary" onclick="createBank()">Tạo bộ</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Change Password -->
+<div class="modal-backdrop" id="modal-password">
+  <div class="modal">
+    <div class="modal-title">🔐 Đổi mật khẩu</div>
+    <div class="form-group">
+      <label class="form-label">Mật khẩu hiện tại</label>
+      <input class="form-input" type="password" id="pwd-current" placeholder="••••••••">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mật khẩu mới</label>
+      <input class="form-input" type="password" id="pwd-new" placeholder="Tối thiểu 6 ký tự">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Xác nhận mật khẩu mới</label>
+      <input class="form-input" type="password" id="pwd-confirm" placeholder="Nhập lại mật khẩu mới">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-password')">Hủy</button>
+      <button class="btn btn-primary" onclick="changePassword()">Đổi mật khẩu</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ===== STATE =====
+let state = {
+  user: null,
+  banks: [],
+  questions: [],
+  currentBank: null,
+  generatedGIFT: '',
+  generatedQuestions: [],
+  searchTimer: null
+};
+
+// ===== INIT =====
+async function init() {
+  await loadUser();
+  await loadBanks();
+  await loadQuestions();
+  setupImportPreview();
+  setupDragDrop();
+}
+
+// ===== API =====
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch('/api' + path, opts);
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: r.statusText }));
+    throw new Error(err.error || 'Request failed');
+  }
+  return r.json();
+}
+
+// ===== USER =====
+async function loadUser() {
+  try {
+    state.user = await api('GET', '/me');
+    document.getElementById('user-name').textContent = state.user.name;
+    document.getElementById('user-email').textContent = state.user.email;
+    const avatar = document.getElementById('user-avatar');
+    if (state.user.avatar_url) {
+      avatar.innerHTML = `<img src="${state.user.avatar_url}" onerror="this.style.display='none'">`;
+    } else {
+      avatar.textContent = state.user.name[0].toUpperCase();
+    }
+  } catch(e) { window.location.href = '/login'; }
+}
+
+// ===== BANKS =====
+async function loadBanks() {
+  try {
+    state.banks = await api('GET', '/banks');
+    renderBanks();
+    updateBankSelects();
+  } catch(e) { console.error(e); }
+}
+
+function renderBanks() {
+  const list = document.getElementById('bank-list');
+  list.innerHTML = '';
+  if (!state.banks || state.banks.length === 0) {
+    list.innerHTML = '<div style="padding:8px 10px;font-size:12px;color:var(--text3)">Chưa có bộ nào</div>';
+    return;
+  }
+  state.banks.forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'bank-item' + (state.currentBank === b.id ? ' active' : '');
+    el.dataset.id = b.id;
+    el.innerHTML = `
+      <div class="bank-dot"></div>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(b.title)}</span>
+      <span class="bank-count">${b.question_count || 0}</span>
+      <button class="bank-del" onclick="event.stopPropagation();deleteBank('${b.id}', event)">✕</button>
+    `;
+    el.onclick = () => selectBank(b.id);
+    list.appendChild(el);
+  });
+}
+
+function updateBankSelects() {
+  const selects = ['q-bank', 'import-bank'];
+  selects.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Không lưu vào bộ</option>';
+    (state.banks || []).forEach(b => {
+      sel.innerHTML += `<option value="${b.id}">${escHtml(b.title)}</option>`;
+    });
+    sel.value = val;
+  });
+}
+
+function selectBank(id) {
+  state.currentBank = id === state.currentBank ? null : id;
+  renderBanks();
+  showView('questions');
+  loadQuestions();
+  const bank = state.banks.find(b => b.id === id);
+  if (bank) document.getElementById('q-bank-subtitle').textContent = `Bộ: ${bank.title}`;
+}
+
+function openCreateBank() {
+  document.getElementById('bank-name').value = '';
+  document.getElementById('bank-desc').value = '';
+  openModal('modal-bank');
+  setTimeout(() => document.getElementById('bank-name').focus(), 100);
+}
+
+async function createBank() {
+  const title = document.getElementById('bank-name').value.trim();
+  if (!title) { toast('Nhập tên bộ câu hỏi', 'error'); return; }
+  try {
+    const bank = await api('POST', '/banks', {
+      title, description: document.getElementById('bank-desc').value.trim()
+    });
+    state.banks.unshift(bank);
+    renderBanks();
+    updateBankSelects();
+    closeModal('modal-bank');
+    toast(`✅ Đã tạo bộ "${title}"`, 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteBank(id, e) {
+  if (!confirm('Xóa bộ câu hỏi này? (Câu hỏi sẽ không bị xóa)')) return;
+  try {
+    await api('DELETE', '/banks/' + id);
+    state.banks = state.banks.filter(b => b.id !== id);
+    if (state.currentBank === id) {
+      state.currentBank = null;
+      document.getElementById('q-bank-subtitle').textContent = 'Tất cả câu hỏi đã lưu';
+    }
+    renderBanks();
+    updateBankSelects();
+    toast('Đã xóa bộ câu hỏi', 'success');
+    loadQuestions();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ===== QUESTIONS =====
+async function loadQuestions() {
+  try {
+    let url = '/questions?';
+    if (state.currentBank) url += `bank_id=${state.currentBank}&`;
+    const type = document.getElementById('filter-type')?.value;
+    if (type) url += `type=${type}&`;
+    const search = document.getElementById('search-input')?.value;
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+
+    state.questions = await api('GET', url);
+    renderQuestions();
+    document.getElementById('total-badge').textContent = state.questions.length;
+  } catch(e) { console.error(e); }
+}
+
+function renderQuestions() {
+  const list = document.getElementById('q-list');
+  if (!state.questions || state.questions.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="e-icon">📚</div>
+      <h3>Chưa có câu hỏi</h3>
+      <p>Tạo câu hỏi bằng AI hoặc import file GIFT để bắt đầu</p>
+    </div>`;
+    return;
+  }
+  list.innerHTML = state.questions.map((q, i) => `
+    <div class="q-row" style="animation-delay:${i*0.03}s">
+      <span class="q-type-badge ${typeBadgeClass(q.type)}">${typeLabel(q.type)}</span>
+      <div class="q-row-body">
+        <div class="q-row-title">${escHtml(q.title)}</div>
+        <div class="q-row-preview">${escHtml(q.content.slice(0,120))}...</div>
+        <div class="q-row-meta">${formatDate(q.created_at)}</div>
+      </div>
+      <div class="q-row-actions">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="copyText('${escAttr(q.content)}')" title="Copy GIFT">📋</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteQuestion('${q.id}')" title="Xóa">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteQuestion(id) {
+  if (!confirm('Xóa câu hỏi này?')) return;
+  try {
+    await api('DELETE', '/questions/' + id);
+    state.questions = state.questions.filter(q => q.id !== id);
+    renderQuestions();
+    document.getElementById('total-badge').textContent = state.questions.length;
+    toast('Đã xóa câu hỏi', 'success');
+    loadBanks();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function debounceSearch() {
+  clearTimeout(state.searchTimer);
+  state.searchTimer = setTimeout(loadQuestions, 300);
+}
+
+// ===== GENERATE =====
+function toggleChip(el) {
+  el.classList.toggle('selected');
+}
+
+async function generateQuestions() {
+  const sourceText = document.getElementById('source-text').value.trim();
+  if (!sourceText) { toast('Nhập nội dung nguồn trước', 'error'); return; }
+
+  const selectedTypes = [...document.querySelectorAll('.chip.selected')].map(c => c.dataset.type);
+  if (selectedTypes.length === 0) { toast('Chọn ít nhất 1 loại câu hỏi', 'error'); return; }
+
+  const btn = document.getElementById('btn-generate');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Đang tạo...';
+  document.getElementById('gen-loading').classList.add('show');
+  document.getElementById('output-actions').style.display = 'none';
+
+  try {
+    const result = await api('POST', '/generate', {
+      source_text: sourceText,
+      question_types: selectedTypes,
+      count: parseInt(document.getElementById('q-count').value),
+      language: document.getElementById('q-lang').value,
+      difficulty: document.getElementById('q-diff').value,
+      bank_id: document.getElementById('q-bank').value
+    });
+
+    state.generatedGIFT = result.gift_text;
+    state.generatedQuestions = result.questions;
+
+    renderGeneratedCards(result.questions);
+    document.getElementById('raw-output').textContent = result.gift_text;
+    document.getElementById('raw-output').style.display = 'block';
+    document.getElementById('raw-placeholder').style.display = 'none';
+    document.getElementById('output-actions').style.display = 'flex';
+
+    toast(`✅ Đã tạo ${result.questions.length} câu hỏi!`, 'success');
+    await loadBanks();
+    loadQuestions();
+  } catch(e) {
+    toast('Lỗi: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>✨</span> Generate';
+    document.getElementById('gen-loading').classList.remove('show');
+  }
+}
+
+function renderGeneratedCards(questions) {
+  const container = document.getElementById('cards-container');
+  const placeholder = document.getElementById('output-placeholder');
+  placeholder.style.display = 'none';
+
+  container.innerHTML = questions.map((q, i) => `
+    <div class="q-card" style="animation-delay:${i*0.08}s">
+      <div class="q-card-header">
+        <span class="q-type-badge ${typeBadgeClass(q.type)}">${typeLabel(q.type)}</span>
+        <div class="q-title">${escHtml(q.title)}</div>
+        <div class="q-actions">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="copyText('${escAttr(q.content)}')" title="Copy GIFT">📋</button>
+        </div>
+      </div>
+      <pre class="q-gift" id="gift-${i}">${escHtml(q.content)}</pre>
+      <button onclick="toggleExpand('gift-${i}', this)" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;margin-top:4px;font-family:var(--mono)">
+        ▼ Xem thêm
+      </button>
+    </div>
+  `).join('');
+}
+
+function toggleExpand(id, btn) {
+  const el = document.getElementById(id);
+  el.classList.toggle('expanded');
+  btn.textContent = el.classList.contains('expanded') ? '▲ Thu gọn' : '▼ Xem thêm';
+}
+
+function switchOutputTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('output-cards').style.display = tab === 'cards' ? 'block' : 'none';
+  const rawDiv = document.getElementById('output-raw');
+  rawDiv.style.display = tab === 'raw' ? 'flex' : 'none';
+}
+
+function clearGenerate() {
+  document.getElementById('source-text').value = '';
+  document.getElementById('cards-container').innerHTML = '';
+  document.getElementById('output-placeholder').style.display = 'flex';
+  document.getElementById('raw-output').style.display = 'none';
+  document.getElementById('raw-placeholder').style.display = 'flex';
+  document.getElementById('output-actions').style.display = 'none';
+  state.generatedGIFT = '';
+}
+
+async function copyGIFT() {
+  if (!state.generatedGIFT) return;
+  await navigator.clipboard.writeText(state.generatedGIFT);
+  toast('✅ Đã copy GIFT format!', 'success');
+}
+
+function downloadGIFT() {
+  if (!state.generatedGIFT) return;
+  const blob = new Blob([state.generatedGIFT], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `questions_${Date.now()}.gift`;
+  a.click();
+  toast('⬇ Đang tải file...', 'info');
+}
+
+// ===== FILE UPLOAD (for generate) =====
+async function handleFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  await uploadAndSetSource(file);
+  input.value = ''; // reset so same file can be re-uploaded
+}
+
+async function uploadAndSetSource(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const isParsed = ['pdf','docx','doc'].includes(ext);
+
+  // Show inline loading inside the banner
+  showFileInfoBanner('⏳', `Đang xử lý ${file.name}...`);
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const r = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+
+    document.getElementById('source-text').value = data.content;
+
+    const extIcon = { pdf:'📕', docx:'📘', doc:'📘', txt:'📄', gift:'🎁' }[ext] || '📄';
+    const sizeKB = Math.round(data.size_bytes / 1024);
+    const msg = `${data.filename} · ${sizeKB} KB · ${data.word_count.toLocaleString()} từ`;
+    showFileInfoBanner(extIcon, msg);
+
+    const verb = isParsed ? 'trích xuất' : 'tải';
+    toast(`✅ Đã ${verb} text từ: ${data.filename}`, 'success');
+  } catch(e) {
+    hideFileInfoBanner();
+    toast('Lỗi: ' + e.message, 'error');
+  }
+}
+
+function showFileInfoBanner(icon, text) {
+  const banner = document.getElementById('file-info-banner');
+  document.getElementById('file-info-icon').textContent = icon;
+  document.getElementById('file-info-text').textContent = text;
+  banner.style.display = 'flex';
+}
+
+function hideFileInfoBanner() {
+  document.getElementById('file-info-banner').style.display = 'none';
+}
+
+function clearFileInfo() {
+  hideFileInfoBanner();
+  document.getElementById('source-text').value = '';
+}
+
+// ===== URL FETCH =====
+function openUrlFetch() {
+  document.getElementById('url-fetch-bar').style.display = 'block';
+  setTimeout(() => document.getElementById('url-input').focus(), 50);
+}
+
+function closeUrlFetch() {
+  document.getElementById('url-fetch-bar').style.display = 'none';
+  document.getElementById('url-input').value = '';
+}
+
+async function fetchUrl() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) { toast('Nhập URL cần lấy nội dung', 'error'); return; }
+  if (!url.startsWith('http')) { toast('URL phải bắt đầu bằng http:// hoặc https://', 'error'); return; }
+
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = 'Đang lấy...';
+
+  try {
+    const r = await fetch('/api/fetch-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+
+    document.getElementById('source-text').value = data.content;
+    showFileInfoBanner('🌐', `${data.title || url} · ${data.word_count.toLocaleString()} từ`);
+    closeUrlFetch();
+    toast(`✅ Đã lấy nội dung từ URL!`, 'success');
+  } catch(e) {
+    toast('Lỗi lấy URL: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Lấy nội dung';
+  }
+}
+
+// ===== IMPORT =====
+function setupImportPreview() {
+  document.getElementById('import-content').addEventListener('input', previewImport);
+}
+
+function previewImport() {
+  const content = document.getElementById('import-content').value;
+  if (!content.trim()) {
+    document.getElementById('import-preview').innerHTML = `<div class="output-empty"><div class="big-icon">👁</div><p>Preview câu hỏi</p></div>`;
+    document.getElementById('import-count').textContent = '';
+    return;
+  }
+  const questions = quickParseGIFT(content);
+  document.getElementById('import-count').textContent = `${questions.length} câu hỏi`;
+  if (questions.length === 0) {
+    document.getElementById('import-preview').innerHTML = `<div class="output-empty"><div class="big-icon">⚠️</div><p>Không tìm thấy câu hỏi GIFT hợp lệ</p></div>`;
+    return;
+  }
+  document.getElementById('import-preview').innerHTML = questions.slice(0,20).map((q, i) => `
+    <div class="q-card" style="animation-delay:${i*0.05}s">
+      <div class="q-card-header">
+        <span class="q-type-badge ${typeBadgeClass(q.type)}">${typeLabel(q.type)}</span>
+        <div class="q-title">${escHtml(q.title)}</div>
+      </div>
+      <pre class="q-gift">${escHtml(q.content.slice(0,200))}</pre>
+    </div>
+  `).join('');
+}
+
+function quickParseGIFT(text) {
+  const blocks = text.split(/\n\s*\n/).filter(b => b.trim() && b.includes('{'));
+  return blocks.map(b => ({
+    title: extractTitle(b),
+    type: detectType(b),
+    content: b.trim()
+  }));
+}
+
+function extractTitle(block) {
+  if (block.startsWith('::')) {
+    const end = block.indexOf('::', 2);
+    if (end > 0) return block.slice(2, end).trim();
+  }
+  const q = block.replace(/\{[\s\S]*\}/, '').trim();
+  return q.slice(0, 60) + (q.length > 60 ? '...' : '');
+}
+
+function detectType(block) {
+  if (block.includes('->')) return 'matching';
+  if (block.includes('~')) return 'multiple_choice';
+  if (/TRUE|FALSE/.test(block) && !block.includes('~')) return 'true_false';
+  const inner = block.replace(/[\s\S]*\{/, '').replace(/\}[\s\S]*/, '').trim();
+  if (!inner) return 'essay';
+  return 'short_answer';
+}
+
+async function handleImportFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  // For PDF/DOCX, use server extraction; for txt/gift, read directly
+  if (['pdf', 'docx', 'doc'].includes(ext)) {
+    toast(`⏳ Đang trích xuất text từ ${file.name}...`, 'info');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const r = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await r.json();
+      if (data.error) throw new Error(data.error);
+      document.getElementById('import-content').value = data.content;
+      previewImport();
+      toast(`✅ Đã trích xuất từ ${data.filename} (${data.word_count.toLocaleString()} từ)`, 'success');
+    } catch(e) {
+      toast('Lỗi: ' + e.message, 'error');
+    }
+  } else {
+    // Plain text — read client-side instantly
+    const text = await file.text();
+    document.getElementById('import-content').value = text;
+    previewImport();
+    toast(`✅ Đã tải: ${file.name}`, 'success');
+  }
+  input.value = '';
+}
+
+async function importGIFT() {
+  const content = document.getElementById('import-content').value.trim();
+  if (!content) { toast('Nhập nội dung GIFT', 'error'); return; }
+  try {
+    const result = await api('POST', '/import', {
+      gift_content: content,
+      bank_id: document.getElementById('import-bank').value
+    });
+    toast(`✅ Đã import ${result.imported} câu hỏi!`, 'success');
+    document.getElementById('import-content').value = '';
+    document.getElementById('import-preview').innerHTML = `<div class="output-empty"><div class="big-icon">✅</div><p>Import thành công ${result.imported} câu hỏi</p></div>`;
+    await loadBanks();
+    loadQuestions();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function setupDragDrop() {
+  const dz = document.getElementById('import-dropzone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', async e => {
+    e.preventDefault(); dz.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      // Reuse same logic as file input
+      const mockInput = { files: [file], value: '' };
+      await handleImportFile(mockInput);
+    }
+  });
+}
+
+// ===== EXPORT =====
+async function exportQuestions() {
+  let url = '/api/export?';
+  if (state.currentBank) url += `bank_id=${state.currentBank}&`;
+  const type = document.getElementById('filter-type').value;
+  if (type) url += `type=${type}&`;
+  window.location.href = url;
+  toast('⬇ Đang tải file GIFT...', 'info');
+}
+
+// ===== NAVIGATION =====
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'questions') loadQuestions();
+}
+
+// ===== MODALS =====
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ===== TOAST =====
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; el.style.transition = '0.3s'; }, 3000);
+  setTimeout(() => el.remove(), 3300);
+}
+
+// ===== HELPERS =====
+function typeBadgeClass(type) {
+  return { multiple_choice:'badge-mc', true_false:'badge-tf', short_answer:'badge-sa', essay:'badge-es', matching:'badge-mt' }[type] || 'badge-mc';
+}
+
+function typeLabel(type) {
+  return { multiple_choice:'MCQ', true_false:'T/F', short_answer:'Fill', essay:'Essay', matching:'Match' }[type] || type;
+}
+
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(s) {
+  return String(s || '').replace(/'/g, '\\\'').replace(/\n/g, '\\n');
+}
+
+async function copyText(text) {
+  const decoded = text.replace(/\\n/g, '\n').replace(/\\\'/g, "'");
+  await navigator.clipboard.writeText(decoded).catch(() => {});
+  toast('✅ Đã copy!', 'success');
+}
+
+// ===== CHANGE PASSWORD =====
+async function changePassword() {
+  const current = document.getElementById('pwd-current').value;
+  const newPwd  = document.getElementById('pwd-new').value;
+  const confirm = document.getElementById('pwd-confirm').value;
+
+  if (!current || !newPwd || !confirm) { toast('Điền đầy đủ các trường', 'error'); return; }
+  if (newPwd !== confirm) { toast('Mật khẩu mới không khớp', 'error'); return; }
+  if (newPwd.length < 6) { toast('Mật khẩu mới phải ít nhất 6 ký tự', 'error'); return; }
+
+  try {
+    await api('POST', '/change-password', { current_password: current, new_password: newPwd });
+    toast('✅ Đã đổi mật khẩu thành công!', 'success');
+    closeModal('modal-password');
+    document.getElementById('pwd-current').value = '';
+    document.getElementById('pwd-new').value = '';
+    document.getElementById('pwd-confirm').value = '';
+  } catch(e) {
+    toast('Lỗi: ' + e.message, 'error');
+  }
+}
+
+// ===== START =====
+init();
+</script>
+</body>
+</html>
