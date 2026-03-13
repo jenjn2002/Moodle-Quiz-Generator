@@ -782,11 +782,23 @@ Ví dụ:
         </div>
       </div>
 
+      <!-- Bulk actions bar -->
+      <div id="bulk-bar" style="display:none;padding:8px 20px;background:rgba(239,68,68,0.08);border-bottom:1px solid rgba(239,68,68,0.2);align-items:center;gap:12px;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2);">
+          <input type="checkbox" id="select-all-cb" onchange="toggleSelectAll(this.checked)">
+          Chọn tất cả
+        </label>
+        <span id="selected-count" style="font-size:12px;color:var(--text3);margin-left:4px;">0 đã chọn</span>
+        <button class="btn btn-danger btn-sm" onclick="bulkDeleteSelected()" style="margin-left:auto;">🗑 Xóa đã chọn</button>
+        <button class="btn btn-ghost btn-sm" onclick="exitBulkMode()">✕ Hủy</button>
+      </div>
+
       <div class="q-toolbar">
         <div class="search-box">
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Tìm kiếm câu hỏi..." id="search-input" oninput="debounceSearch()">
         </div>
+        <button class="btn btn-ghost btn-sm" id="btn-bulk-mode" onclick="enterBulkMode()" style="margin-left:8px;" title="Chọn nhiều câu hỏi">☑ Chọn</button>
         <select id="filter-type" onchange="loadQuestions()" style="min-width:130px">
           <option value="">Tất cả loại</option>
           <option value="multiple_choice">Trắc nghiệm</option>
@@ -866,7 +878,8 @@ let state = {
   currentBank: null,
   generatedGIFT: '',
   generatedQuestions: [],
-  searchTimer: null
+  searchTimer: null,
+  bulkMode: false
 };
 
 // ===== INIT =====
@@ -1025,6 +1038,7 @@ function renderQuestions() {
   }
   list.innerHTML = state.questions.map((q, i) => `
     <div class="q-row" style="animation-delay:${i*0.03}s">
+      <input type="checkbox" class="q-bulk-cb" data-id="${q.id}" onchange="updateBulkCount()" style="display:${state.bulkMode ? 'inline' : 'none'};margin-right:8px;cursor:pointer;">
       <span class="q-type-badge ${typeBadgeClass(q.type)}">${typeLabel(q.type)}</span>
       <div class="q-row-body">
         <div class="q-row-title">${escHtml(q.title)}</div>
@@ -1032,11 +1046,20 @@ function renderQuestions() {
         <div class="q-row-meta">${formatDate(q.created_at)}</div>
       </div>
       <div class="q-row-actions">
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="copyText('${escAttr(q.content)}')" title="Copy GIFT">📋</button>
+        <button class="btn btn-ghost btn-sm btn-icon" data-qi="${i}" onclick="copyQuestionAtIndex(this)" title="Copy GIFT">📋</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteQuestion('${q.id}')" title="Xóa">🗑</button>
       </div>
     </div>
   `).join('');
+}
+
+function copyQuestionAtIndex(btn) {
+  const idx = parseInt(btn.dataset.qi);
+  const q = state.questions[idx];
+  if (q) {
+    navigator.clipboard.writeText(q.content).catch(() => {});
+    toast('✅ Đã copy!', 'success');
+  }
 }
 
 async function deleteQuestion(id) {
@@ -1054,6 +1077,44 @@ async function deleteQuestion(id) {
 function debounceSearch() {
   clearTimeout(state.searchTimer);
   state.searchTimer = setTimeout(loadQuestions, 300);
+}
+
+function enterBulkMode() {
+  state.bulkMode = true;
+  document.getElementById('bulk-bar').style.display = 'flex';
+  document.querySelectorAll('.q-bulk-cb').forEach(cb => { cb.style.display = 'inline'; cb.checked = false; });
+  updateBulkCount();
+}
+
+function exitBulkMode() {
+  state.bulkMode = false;
+  document.getElementById('bulk-bar').style.display = 'none';
+  document.querySelectorAll('.q-bulk-cb').forEach(cb => { cb.style.display = 'none'; cb.checked = false; });
+  const sa = document.getElementById('select-all-cb');
+  if (sa) sa.checked = false;
+}
+
+function toggleSelectAll(checked) {
+  document.querySelectorAll('.q-bulk-cb').forEach(cb => { cb.checked = checked; });
+  updateBulkCount();
+}
+
+function updateBulkCount() {
+  const n = document.querySelectorAll('.q-bulk-cb:checked').length;
+  document.getElementById('selected-count').textContent = n + ' đã chọn';
+}
+
+async function bulkDeleteSelected() {
+  const ids = Array.from(document.querySelectorAll('.q-bulk-cb:checked')).map(cb => cb.dataset.id);
+  if (!ids.length) return toast('Chưa chọn câu hỏi nào', 'error');
+  if (!confirm('Xóa ' + ids.length + ' câu hỏi đã chọn?')) return;
+  try {
+    await api('POST', '/questions/bulk-delete', { ids });
+    toast('Đã xóa ' + ids.length + ' câu hỏi', 'success');
+    exitBulkMode();
+    loadQuestions();
+    loadBanks();
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 // ===== GENERATE =====
@@ -1116,7 +1177,7 @@ function renderGeneratedCards(questions) {
         <span class="q-type-badge ${typeBadgeClass(q.type)}">${typeLabel(q.type)}</span>
         <div class="q-title">${escHtml(q.title)}</div>
         <div class="q-actions">
-          <button class="btn btn-ghost btn-sm btn-icon" onclick="copyText('${escAttr(q.content)}')" title="Copy GIFT">📋</button>
+          <button class="btn btn-ghost btn-sm btn-icon" data-gi="${i}" onclick="copyGenQuestionAtIndex(this)" title="Copy GIFT">📋</button>
         </div>
       </div>
       <pre class="q-gift" id="gift-${i}">${escHtml(q.content)}</pre>
@@ -1125,6 +1186,15 @@ function renderGeneratedCards(questions) {
       </button>
     </div>
   `).join('');
+}
+
+function copyGenQuestionAtIndex(btn) {
+  const idx = parseInt(btn.dataset.gi);
+  const q = state.generatedQuestions[idx];
+  if (q) {
+    navigator.clipboard.writeText(q.content).catch(() => {});
+    toast('✅ Đã copy!', 'success');
+  }
 }
 
 function toggleExpand(id, btn) {

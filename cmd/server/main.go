@@ -75,6 +75,7 @@ func main() {
 		// Questions
 		r.Get("/questions", handlers.ListQuestions)
 		r.Delete("/questions/{id}", handlers.DeleteQuestion)
+		r.Post("/questions/bulk-delete", handlers.BulkDeleteQuestions)
 
 		// Generate & Import
 		r.Post("/generate", handlers.Generate)

@@ -447,12 +447,14 @@ func parseXLSXRow(qType string, row []string) *TemplateQuestion {
 // ConvertToGIFT converts parsed template questions to a complete GIFT format string.
 func ConvertToGIFT(questions []TemplateQuestion) string {
 	var sb strings.Builder
-	sb.WriteString("// GIFT format — converted from template\n")
-	sb.WriteString(fmt.Sprintf("// Total: %d questions\n\n", len(questions)))
 
 	lastCategory := ""
 
 	for _, q := range questions {
+		// Skip DESC — description text is not a real question in GIFT
+		if q.Type == "DESC" {
+			continue
+		}
 		if q.Category != "" && q.Category != lastCategory {
 			sb.WriteString(fmt.Sprintf("$CATEGORY: %s\n\n", q.Category))
 			lastCategory = q.Category

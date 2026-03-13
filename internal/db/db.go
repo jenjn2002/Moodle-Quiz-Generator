@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -255,6 +256,26 @@ func GetQuestionsByUser(userID, bankID, qtype, search string) ([]models.Question
 func DeleteQuestion(id, userID string) error {
 	_, err := DB.Exec(`DELETE FROM questions WHERE id=$1 AND user_id=$2`, id, userID)
 	return err
+}
+
+// DeleteQuestionsBulk deletes multiple questions by IDs for a given user.
+func DeleteQuestionsBulk(ids []string, userID string) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	// Build parameterized query: DELETE FROM questions WHERE user_id=$1 AND id IN ($2,$3,...)
+	args := []interface{}{userID}
+	placeholders := make([]string, len(ids))
+	for i, id := range ids {
+		args = append(args, id)
+		placeholders[i] = fmt.Sprintf("$%d", i+2)
+	}
+	query := fmt.Sprintf(`DELETE FROM questions WHERE user_id=$1 AND id IN (%s)`, strings.Join(placeholders, ","))
+	res, err := DB.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
 
 func tagsToArray(tags []string) string {
