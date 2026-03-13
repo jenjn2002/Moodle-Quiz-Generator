@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/youorg/moodle-gift-generator/internal/auth"
 	"github.com/youorg/moodle-gift-generator/internal/db"
 	"github.com/youorg/moodle-gift-generator/internal/models"
@@ -427,3 +428,123 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonResponse(w, 200, map[string]string{"status": "ok"})
 }
+
+// ============ API: TEMPLATE DOWNLOAD & IMPORT ============
+
+// GET /api/template/txt — download sample TXT template
+func DownloadTemplateTXT(w http.ResponseWriter, r *http.Request) {
+	content := services.GetSampleTemplateTXT()
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="moodle_question_template.txt"`)
+	w.Write([]byte(content))
+}
+
+// GET /api/template/xlsx — download sample XLSX template
+func DownloadTemplateXLSX(w http.ResponseWriter, r *http.Request) {
+	buf, err := services.GenerateTemplateXLSX()
+	if err != nil {
+		jsonError(w, 500, "could not generate xlsx template: "+err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", `attachment; filename="moodle_question_template.xlsx"`)
+	w.Write(buf.Bytes())
+}
+
+// POST /api/import-template — upload filled template (txt or xlsx), convert to GIFT
+func ImportTemplate(w http.ResponseWriter, r *http.Request) {
+	user := auth.UserFromCtx(r.Context())
+
+	if err := r.ParseMultipartForm(20 << 20); err != nil {
+		jsonError(w, 400, "file quá lớn (tối đa 20 MB)")
+		return
+	}
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		jsonError(w, 400, "không tìm thấy file trong request")
+		return
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		jsonError(w, 500, "không thể đọc file")
+		return
+	}
+
+	ext := strings.ToLower(header.Filename[strings.LastIndex(header.Filename, "."):])
+	var tplQuestions []services.TemplateQuestion
+
+	switch ext {
+	case ".txt":
+		tplQuestions, err = services.ParseTemplateTXT(data)
+	case ".xlsx":
+		tplQuestions, err = services.ParseTemplateXLSX(data)
+	default:
+		jsonError(w, 400, "chỉ hỗ trợ file .txt hoặc .xlsx")
+		return
+	}
+
+	if err != nil {
+		jsonError(w, 422, err.Error())
+		return
+	}
+
+	// Convert to GIFT
+	giftText := services.ConvertToGIFT(tplQuestions)
+
+	// Build question objects for saving
+	bankID := r.FormValue("bank_id")
+	var questions []models.Question
+
+	for _, tq := range tplQuestions {
+		gift := services.ConvertToGIFT([]services.TemplateQuestion{tq})
+		gift = strings.TrimSpace(gift)
+		// Remove header comments from single-question conversion
+		lines := strings.Split(gift, "\n")
+		var clean []string
+		for _, l := range lines {
+			if !strings.HasPrefix(strings.TrimSpace(l), "//") {
+				clean = append(clean, l)
+			}
+		}
+		gift = strings.TrimSpace(strings.Join(clean, "\n"))
+
+		title := tq.Title
+		if title == "" {
+			r := []rune(tq.Question)
+			if len(r) > 60 {
+				title = string(r[:60]) + "..."
+			} else {
+				title = tq.Question
+			}
+		}
+
+		questions = append(questions, models.Question{
+			ID:       uuid.New().String(),
+			UserID:   user.ID,
+			BankID:   bankID,
+			Type:     services.TemplateQuestionToDBType(tq.Type),
+			Title:    title,
+			Content:  gift,
+			Language: "vi",
+			Tags:     []string{},
+		})
+	}
+
+	// Save to DB
+	if len(questions) > 0 {
+		if err := db.SaveQuestions(questions); err != nil {
+			fmt.Printf("Warning: could not save template questions: %v\n", err)
+		}
+	}
+
+	jsonResponse(w, 200, map[string]interface{}{
+		"imported":  len(questions),
+		"questions": questions,
+		"gift_text": giftText,
+	})
+}
+
+

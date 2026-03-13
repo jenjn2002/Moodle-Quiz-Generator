@@ -297,6 +297,10 @@ select:focus { outline: none; border-color: var(--accent); }
 .badge-sa { background: rgba(245,158,11,0.15); color: #fbbf24; }
 .badge-es { background: rgba(139,92,246,0.15); color: #a78bfa; }
 .badge-mt { background: rgba(236,72,153,0.15); color: #f472b6; }
+.badge-num { background: rgba(6,182,212,0.15); color: #22d3ee; }
+.badge-mw { background: rgba(249,115,22,0.15); color: #fb923c; }
+.badge-ma { background: rgba(168,85,247,0.15); color: #c084fc; }
+.badge-desc { background: rgba(100,116,139,0.15); color: #94a3b8; }
 
 .q-title { font-size: 13px; font-weight: 600; flex: 1; line-height: 1.4; }
 .q-actions { margin-left: auto; display: flex; gap: 4px; opacity: 0; transition: 0.15s; }
@@ -550,6 +554,9 @@ select:focus { outline: none; border-color: var(--accent); }
             <div class="chip" data-type="short_answer" onclick="toggleChip(this)">Điền từ</div>
             <div class="chip" data-type="essay" onclick="toggleChip(this)">Tự luận</div>
             <div class="chip" data-type="matching" onclick="toggleChip(this)">Nối cặp</div>
+            <div class="chip" data-type="numerical" onclick="toggleChip(this)">Câu hỏi số</div>
+            <div class="chip" data-type="missing_word" onclick="toggleChip(this)">Điền chỗ trống</div>
+            <div class="chip" data-type="multiple_answer" onclick="toggleChip(this)">Nhiều đáp án</div>
           </div>
         </div>
         <div class="config-group">
@@ -662,10 +669,12 @@ select:focus { outline: none; border-color: var(--accent); }
     <div class="view" id="view-import">
       <div class="topbar">
         <div>
-          <div class="page-title">📥 Import GIFT</div>
-          <div class="page-sub">Import câu hỏi từ file GIFT hoặc paste trực tiếp</div>
+          <div class="page-title">📥 Import câu hỏi</div>
+          <div class="page-sub">Import từ GIFT, template TXT/XLSX, hoặc paste trực tiếp</div>
         </div>
         <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="window.location.href='/api/template/txt'" title="Tải mẫu TXT">📄 Mẫu TXT</button>
+          <button class="btn btn-ghost btn-sm" onclick="window.location.href='/api/template/xlsx'" title="Tải mẫu Excel">📊 Mẫu XLSX</button>
           <button class="btn btn-primary" onclick="importGIFT()">📥 Import & Lưu</button>
         </div>
       </div>
@@ -674,20 +683,30 @@ select:focus { outline: none; border-color: var(--accent); }
         <div class="panel">
           <div class="panel-header">
             <span>📋</span>
-            <span class="panel-title">Nội dung GIFT</span>
+            <span class="panel-title">Nội dung GIFT / Template</span>
             <div class="panel-actions">
               <label class="btn btn-ghost btn-sm" style="cursor:pointer">
-                📎 Upload .gift
-                <input type="file" accept=".gift,.txt,.pdf,.docx" style="display:none" onchange="handleImportFile(this)">
+                📎 Upload file
+                <input type="file" accept=".gift,.txt,.pdf,.docx,.xlsx" style="display:none" onchange="handleImportFile(this)">
               </label>
             </div>
           </div>
           <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;">
             <div class="dropzone" id="import-dropzone" onclick="document.getElementById('import-file').click()">
-              <input type="file" id="import-file" accept=".gift,.txt,.pdf,.docx" style="display:none" onchange="handleImportFile(this)">
+              <input type="file" id="import-file" accept=".gift,.txt,.pdf,.docx,.xlsx" style="display:none" onchange="handleImportFile(this)">
               <div class="dropzone-icon">📁</div>
               <div class="dropzone-text">Kéo thả file vào đây</div>
-              <div class="dropzone-sub">PDF, DOCX, TXT, GIFT — tối đa 20 MB</div>
+              <div class="dropzone-sub">GIFT, TXT (template), XLSX (template), PDF, DOCX — tối đa 20 MB</div>
+            </div>
+
+            <!-- Template info banner -->
+            <div id="template-info" style="display:none;padding:10px 14px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);border-radius:8px;font-size:12px;color:#a78bfa;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span>📊</span>
+                <strong id="template-info-title">Template đã được chuyển đổi sang GIFT</strong>
+                <button onclick="document.getElementById('template-info').style.display='none'" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#64748b">✕</button>
+              </div>
+              <div id="template-info-detail" style="font-size:11px;color:#94a3b8"></div>
             </div>
 
             <textarea id="import-content" placeholder="Hoặc paste nội dung GIFT vào đây...
@@ -753,6 +772,10 @@ Ví dụ:
           <option value="short_answer">Điền từ</option>
           <option value="essay">Tự luận</option>
           <option value="matching">Nối cặp</option>
+          <option value="numerical">Câu hỏi số</option>
+          <option value="missing_word">Điền chỗ trống</option>
+          <option value="multiple_answer">Nhiều đáp án</option>
+          <option value="description">Mô tả</option>
         </select>
       </div>
 
@@ -1263,10 +1286,18 @@ function extractTitle(block) {
 
 function detectType(block) {
   if (block.includes('->')) return 'matching';
-  if (block.includes('~')) return 'multiple_choice';
+  if (/\{#/.test(block)) return 'numerical';
+  if (block.includes('~') && /%\d/.test(block) && !block.includes('=')) return 'multiple_answer';
+  if (block.includes('~')) {
+    // Check if it's missing word (answers in middle of text)
+    const braceEnd = block.indexOf('}');
+    if (braceEnd > 0 && braceEnd < block.length - 5) return 'missing_word';
+    return 'multiple_choice';
+  }
   if (/TRUE|FALSE/.test(block) && !block.includes('~')) return 'true_false';
   const inner = block.replace(/[\s\S]*\{/, '').replace(/\}[\s\S]*/, '').trim();
   if (!inner) return 'essay';
+  if (!block.includes('{')) return 'description';
   return 'short_answer';
 }
 
@@ -1275,7 +1306,31 @@ async function handleImportFile(input) {
   if (!file) return;
   const ext = file.name.split('.').pop().toLowerCase();
 
-  // For PDF/DOCX, use server extraction; for txt/gift, read directly
+  // Template files (.txt with TYPE: headers, .xlsx) → use template parser
+  if (ext === 'xlsx') {
+    await importTemplateFile(file);
+    input.value = '';
+    return;
+  }
+
+  // For .txt files, check if it's a template format (has TYPE: lines)
+  if (ext === 'txt') {
+    const text = await file.text();
+    if (/^TYPE:\s*(MC|TF|SA|MATCH|NUM|ESSAY|MW|MA|DESC)/mi.test(text)) {
+      // It's a template file — convert via server
+      await importTemplateFile(file);
+      input.value = '';
+      return;
+    }
+    // Otherwise treat as plain text/GIFT
+    document.getElementById('import-content').value = text;
+    previewImport();
+    toast(`✅ Đã tải: ${file.name}`, 'success');
+    input.value = '';
+    return;
+  }
+
+  // For PDF/DOCX, use server extraction
   if (['pdf', 'docx', 'doc'].includes(ext)) {
     toast(`⏳ Đang trích xuất text từ ${file.name}...`, 'info');
     try {
@@ -1291,13 +1346,46 @@ async function handleImportFile(input) {
       toast('Lỗi: ' + e.message, 'error');
     }
   } else {
-    // Plain text — read client-side instantly
+    // Plain text — read client-side instantly (.gift files etc)
     const text = await file.text();
     document.getElementById('import-content').value = text;
     previewImport();
     toast(`✅ Đã tải: ${file.name}`, 'success');
   }
   input.value = '';
+}
+
+// Import template file (.txt template or .xlsx) via server API
+async function importTemplateFile(file) {
+  const bankID = document.getElementById('import-bank').value;
+  toast(`⏳ Đang chuyển đổi template ${file.name}...`, 'info');
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (bankID) formData.append('bank_id', bankID);
+
+    const r = await fetch('/api/import-template', { method: 'POST', body: formData });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+
+    // Show GIFT in textarea
+    document.getElementById('import-content').value = data.gift_text || '';
+    previewImport();
+
+    // Show template info banner
+    const info = document.getElementById('template-info');
+    info.style.display = 'block';
+    document.getElementById('template-info-title').textContent = `✅ Đã chuyển đổi ${data.imported} câu hỏi từ template`;
+    document.getElementById('template-info-detail').textContent = `File: ${file.name} → GIFT format. Câu hỏi đã được lưu tự động.`;
+
+    toast(`✅ Đã import ${data.imported} câu hỏi từ template!`, 'success');
+    await loadBanks();
+    loadQuestions();
+  } catch(e) {
+    toast('Lỗi: ' + e.message, 'error');
+  }
+}
 }
 
 async function importGIFT() {
@@ -1371,11 +1459,11 @@ function toast(msg, type = 'info') {
 
 // ===== HELPERS =====
 function typeBadgeClass(type) {
-  return { multiple_choice:'badge-mc', true_false:'badge-tf', short_answer:'badge-sa', essay:'badge-es', matching:'badge-mt' }[type] || 'badge-mc';
+  return { multiple_choice:'badge-mc', true_false:'badge-tf', short_answer:'badge-sa', essay:'badge-es', matching:'badge-mt', numerical:'badge-num', missing_word:'badge-mw', multiple_answer:'badge-ma', description:'badge-desc' }[type] || 'badge-mc';
 }
 
 function typeLabel(type) {
-  return { multiple_choice:'MCQ', true_false:'T/F', short_answer:'Fill', essay:'Essay', matching:'Match' }[type] || type;
+  return { multiple_choice:'MCQ', true_false:'T/F', short_answer:'Fill', essay:'Essay', matching:'Match', numerical:'NUM', missing_word:'MW', multiple_answer:'MA', description:'DESC' }[type] || type;
 }
 
 function formatDate(d) {

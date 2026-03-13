@@ -539,17 +539,39 @@ func splitGIFTBlocks(text string) []string {
 }
 
 func detectGIFTType(block string) string {
-	if (strings.Contains(block, "TRUE") || strings.Contains(block, "FALSE")) && !strings.Contains(block, "~") {
-		return "true_false"
+	// Numerical: answer section starts with {#
+	if strings.Contains(block, "{#") {
+		return "numerical"
 	}
+	// Matching: contains ->
 	if strings.Contains(block, "->") {
 		return "matching"
 	}
+	// Multiple answer: uses ~%...% without = sign
+	if strings.Contains(block, "~%") && !strings.Contains(block, "=") {
+		return "multiple_answer"
+	}
+	// True/False
+	if (strings.Contains(block, "TRUE") || strings.Contains(block, "FALSE")) && !strings.Contains(block, "~") {
+		return "true_false"
+	}
+	// Multiple choice or missing word
 	if strings.Contains(block, "~") {
+		// Missing word: answers appear in middle of text (} is not at end)
+		braceEnd := strings.LastIndex(block, "}")
+		if braceEnd > 0 && braceEnd < len(strings.TrimSpace(block))-3 {
+			return "missing_word"
+		}
 		return "multiple_choice"
 	}
-	if extractGIFTContent(block) == "" {
+	// Essay: empty braces {}
+	content := extractGIFTContent(block)
+	if content == "" && strings.Contains(block, "{") {
 		return "essay"
+	}
+	// Description: no braces at all
+	if !strings.Contains(block, "{") {
+		return "description"
 	}
 	return "short_answer"
 }

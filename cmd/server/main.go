@@ -67,7 +67,7 @@ func main() {
 		r.Get("/me", handlers.GetMe)
 		r.Post("/change-password", handlers.ChangePassword)
 
-		// Banks
+		// Banks  
 		r.Get("/banks", handlers.ListBanks)
 		r.Post("/banks", handlers.CreateBank)
 		r.Delete("/banks/{id}", handlers.DeleteBank)
@@ -82,6 +82,11 @@ func main() {
 		r.Post("/upload", handlers.UploadFile)
 		r.Post("/fetch-url", handlers.FetchURL)
 		r.Get("/export", handlers.ExportGIFT)
+
+		// Template import
+		r.Get("/template/txt", handlers.DownloadTemplateTXT)
+		r.Get("/template/xlsx", handlers.DownloadTemplateXLSX)
+		r.Post("/import-template", handlers.ImportTemplate)
 	})
 
 	// Static files
