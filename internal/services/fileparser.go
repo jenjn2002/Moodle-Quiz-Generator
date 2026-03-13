@@ -25,6 +25,8 @@ func ExtractTextFromFile(filename string, data []byte) (string, error) {
 		return extractDOCX(data)
 	case ".txt", ".gift", ".md":
 		return sanitizeText(string(data)), nil
+	case ".xlsx":
+		return "", fmt.Errorf("file XLSX là template câu hỏi — hãy dùng chức năng Import Template để nhập")
 	default:
 		// Attempt to treat as plain text anyway
 		text := sanitizeText(string(data))
@@ -86,7 +88,7 @@ type docxRun struct {
 }
 
 type docxText struct {
-	Value   string `xml:",chardata"`
+	Value    string `xml:",chardata"`
 	XMLSpace string `xml:"space,attr"`
 }
 
@@ -206,10 +208,10 @@ func BuildFileInfo(filename string, data []byte, content string) FileInfo {
 // ─────────────────────────────────────────────────────────────
 
 var (
-	scriptRe  = regexp.MustCompile(`(?si)<script[^>]*>.*?</script>`)
-	styleRe   = regexp.MustCompile(`(?si)<style[^>]*>.*?</style>`)
-	tagRe     = regexp.MustCompile(`<[^>]+>`)
-	entityRe  = regexp.MustCompile(`&[a-zA-Z]+;|&#[0-9]+;`)
+	scriptRe   = regexp.MustCompile(`(?si)<script[^>]*>.*?</script>`)
+	styleRe    = regexp.MustCompile(`(?si)<style[^>]*>.*?</style>`)
+	tagRe      = regexp.MustCompile(`<[^>]+>`)
+	entityRe   = regexp.MustCompile(`&[a-zA-Z]+;|&#[0-9]+;`)
 	titleTagRe = regexp.MustCompile(`(?i)<title[^>]*>([^<]+)</title>`)
 )
 

@@ -600,9 +600,9 @@ select:focus { outline: none; border-color: var(--accent); }
             <span class="panel-title">Nội dung nguồn</span>
             <div class="panel-actions">
               <button class="btn btn-ghost btn-sm" onclick="openUrlFetch()" title="Lấy nội dung từ URL">🌐 Từ URL</button>
-              <label class="btn btn-ghost btn-sm" style="cursor:pointer" title="Hỗ trợ: PDF, DOCX, TXT, GIFT">
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer" title="Hỗ trợ: PDF, DOCX, TXT, GIFT, XLSX">
                 📎 Upload
-                <input type="file" id="file-upload" accept=".txt,.gift,.pdf,.docx,.doc" style="display:none" onchange="handleFileUpload(this)">
+                <input type="file" id="file-upload" accept=".txt,.gift,.pdf,.docx,.doc,.xlsx" style="display:none" onchange="handleFileUpload(this)">
               </label>
             </div>
           </div>
@@ -1171,6 +1171,13 @@ function downloadGIFT() {
 async function handleFileUpload(input) {
   const file = input.files[0];
   if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  // XLSX files are question templates — redirect to template import
+  if (ext === 'xlsx') {
+    await importTemplateFile(file);
+    input.value = '';
+    return;
+  }
   await uploadAndSetSource(file);
   input.value = ''; // reset so same file can be re-uploaded
 }
