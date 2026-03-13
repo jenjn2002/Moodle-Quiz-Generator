@@ -227,25 +227,68 @@ func ParseTemplateXLSX(data []byte) ([]TemplateQuestion, error) {
 
 func detectSheetType(name string) string {
 	upper := strings.ToUpper(strings.TrimSpace(name))
+
+	// Prefix-based detection (template sheet names)
 	prefixes := []struct {
 		prefix string
 		qtype  string
 	}{
 		{"MC", "MC"},
+		{"MULTIPLE CHOICE", "MC"},
+		{"MULTIPLE_CHOICE", "MC"},
+		{"MCQ", "MC"},
 		{"MA", "MA"},
+		{"MULTIPLE ANSWER", "MA"},
+		{"MULTIPLE_ANSWER", "MA"},
 		{"TF", "TF"},
+		{"TRUE", "TF"},
 		{"SA", "SA"},
+		{"SHORT", "SA"},
 		{"MATCH", "MATCH"},
 		{"NUM", "NUM"},
+		{"NUMERICAL", "NUM"},
 		{"ESSAY", "ESSAY"},
 		{"MW", "MW"},
+		{"MISSING", "MW"},
 		{"DESC", "DESC"},
+		{"DESCRIPTION", "DESC"},
 	}
 	for _, p := range prefixes {
-		if strings.HasPrefix(upper, p.prefix+" ") || strings.HasPrefix(upper, p.prefix+"-") || upper == p.prefix {
+		if strings.HasPrefix(upper, p.prefix+" ") || strings.HasPrefix(upper, p.prefix+"-") || strings.HasPrefix(upper, p.prefix+"_") || upper == p.prefix {
 			return p.qtype
 		}
 	}
+
+	// Vietnamese keyword detection (contains-based)
+	viKeywords := []struct {
+		keyword string
+		qtype   string
+	}{
+		{"TRẮC NGHIỆM", "MC"},
+		{"TRAC NGHIEM", "MC"},
+		{"ĐÚNG SAI", "TF"},
+		{"DUNG SAI", "TF"},
+		{"ĐIỀN TỪ", "SA"},
+		{"DIEN TU", "SA"},
+		{"NỐI CẶP", "MATCH"},
+		{"NOI CAP", "MATCH"},
+		{"CÂU HỎI SỐ", "NUM"},
+		{"CAU HOI SO", "NUM"},
+		{"TỰ LUẬN", "ESSAY"},
+		{"TU LUAN", "ESSAY"},
+		{"ĐIỀN CHỖ TRỐNG", "MW"},
+		{"DIEN CHO TRONG", "MW"},
+		{"NHIỀU ĐÁP ÁN", "MA"},
+		{"NHIEU DAP AN", "MA"},
+		{"MÔ TẢ", "DESC"},
+		{"MO TA", "DESC"},
+	}
+	for _, v := range viKeywords {
+		if strings.Contains(upper, v.keyword) {
+			return v.qtype
+		}
+	}
+
 	return ""
 }
 
@@ -284,8 +327,11 @@ func parseXLSXRow(qType string, row []string) *TemplateQuestion {
 		if q.Question == "" {
 			return nil
 		}
-		q.TFAnswer = strings.ToUpper(cellVal(row, 2))
-		if q.TFAnswer != "TRUE" && q.TFAnswer != "FALSE" {
+		ans := strings.ToUpper(strings.TrimSpace(cellVal(row, 2)))
+		switch ans {
+		case "FALSE", "F", "0", "SAI", "NO", "N", "KHÔNG", "KHONG":
+			q.TFAnswer = "FALSE"
+		default:
 			q.TFAnswer = "TRUE"
 		}
 		q.Feedback = cellVal(row, 3)
@@ -451,7 +497,8 @@ func convertOneToGIFT(q TemplateQuestion) string {
 	case "MA":
 		return convertMAtoGIFT(title, q)
 	case "DESC":
-		return q.Question // Description has no answer part
+		// Description: just escaped text, no answer block
+		return escapeGIFT(q.Question)
 	default:
 		return ""
 	}

@@ -1289,7 +1289,13 @@ function previewImport() {
 }
 
 function quickParseGIFT(text) {
-  const blocks = text.split(/\n\s*\n/).filter(b => b.trim() && b.includes('{'));
+  const blocks = text.split(/\n\s*\n/).filter(b => {
+    const t = b.trim();
+    if (!t) return false;
+    if (t.startsWith('//')) return false;
+    if (t.startsWith('$CATEGORY:')) return false;
+    return true;
+  });
   return blocks.map(b => ({
     title: extractTitle(b),
     type: detectType(b),
@@ -1307,9 +1313,10 @@ function extractTitle(block) {
 }
 
 function detectType(block) {
+  if (!block.includes('{')) return 'description';
   if (block.includes('->')) return 'matching';
   if (/\{#/.test(block)) return 'numerical';
-  if (block.includes('~') && /%\d/.test(block) && !block.includes('=')) return 'multiple_answer';
+  if (/~%[\d.-]+%/.test(block)) return 'multiple_answer';
   if (block.includes('~')) {
     // Check if it's missing word (answers in middle of text)
     const braceEnd = block.indexOf('}');
@@ -1319,7 +1326,6 @@ function detectType(block) {
   if (/TRUE|FALSE/.test(block) && !block.includes('~')) return 'true_false';
   const inner = block.replace(/[\s\S]*\{/, '').replace(/\}[\s\S]*/, '').trim();
   if (!inner) return 'essay';
-  if (!block.includes('{')) return 'description';
   return 'short_answer';
 }
 
