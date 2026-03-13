@@ -546,5 +546,3 @@ func ImportTemplate(w http.ResponseWriter, r *http.Request) {
 		"gift_text": giftText,
 	})
 }
-
-

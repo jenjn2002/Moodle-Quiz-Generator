@@ -43,7 +43,7 @@ func GenerateQuestions(req *models.GenerateRequest, userID string) ([]models.Que
 
 	sents := extractSentences(src)
 	terms := extractKeyTerms(src)
-	defs  := extractDefinitions(src)
+	defs := extractDefinitions(src)
 
 	if len(sents) == 0 {
 		return nil, "", fmt.Errorf("không tìm thấy câu nào trong văn bản đầu vào")
@@ -93,8 +93,8 @@ func GenerateQuestions(req *models.GenerateRequest, userID string) ([]models.Que
 
 	seenBlocks := map[string]bool{}
 	maxAttempts := req.Count * 10
-	attempts    := 0
-	idx         := 0
+	attempts := 0
+	idx := 0
 
 	for len(questions) < req.Count && attempts < maxAttempts {
 		attempts++
@@ -176,7 +176,7 @@ func extractKeyTerms(text string) []KeyTerm {
 
 	add := func(term, desc string) {
 		term = strings.TrimSpace(term)
-		key  := strings.ToLower(term)
+		key := strings.ToLower(term)
 		if term == "" || seen[key] || len([]rune(term)) < 3 || len([]rune(term)) > 60 {
 			return
 		}
@@ -202,8 +202,8 @@ func extractKeyTerms(text string) []KeyTerm {
 	}
 
 	// Capitalised phrase appearing 2+ times
-	capRe  := regexp.MustCompile(`\b([A-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝĂĐ][a-zàáâãèéêìíòóôõùúýăđA-Z]+(?:\s+[A-Za-zàáâãèéêìíòóôõùúýăđ]+){1,3})\b`)
-	freq   := map[string]int{}
+	capRe := regexp.MustCompile(`\b([A-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝĂĐ][a-zàáâãèéêìíòóôõùúýăđA-Z]+(?:\s+[A-Za-zàáâãèéêìíòóôõùúýăđ]+){1,3})\b`)
+	freq := map[string]int{}
 	for _, m := range capRe.FindAllString(text, -1) {
 		freq[m]++
 	}
@@ -235,8 +235,8 @@ func extractDefinitions(text string) []definition {
 				continue
 			}
 			term := strings.TrimSpace(m[1])
-			def  := strings.TrimSpace(m[2])
-			r    := []rune(def)
+			def := strings.TrimSpace(m[2])
+			r := []rune(def)
 			if len(r) > 60 {
 				def = string(r[:60]) + "..."
 			}
@@ -274,7 +274,7 @@ func buildMC(sents []string, terms []KeyTerm, rng *rand.Rand, lang string) (stri
 
 	if chosenTerm.Term != "" {
 		question = replaceFirstCI(sent, chosenTerm.Term, "___")
-		correct  = chosenTerm.Term
+		correct = chosenTerm.Term
 		for _, t := range terms {
 			if strings.ToLower(t.Term) != strings.ToLower(chosenTerm.Term) {
 				distractors = append(distractors, t.Term)
@@ -321,10 +321,10 @@ func buildTF(sents []string, rng *rand.Rand, lang string) (string, string, strin
 	sent := truncate(sents[rng.Intn(len(sents))], 150)
 	isTrue := rng.Float32() < 0.7
 	answer := "TRUE"
-	stmt   := sent
+	stmt := sent
 	if !isTrue {
 		answer = "FALSE"
-		stmt   = negateStatement(sent, lang)
+		stmt = negateStatement(sent, lang)
 	}
 	title := truncate(stmt, 60)
 	return "true_false", title, fmt.Sprintf("::%s::%s { %s }", title, stmt, answer)
@@ -346,7 +346,7 @@ func buildSA(sents []string, terms []KeyTerm, rng *rand.Rand, lang string) (stri
 		for _, t := range shuffledT {
 			if strings.Contains(strings.ToLower(sent), strings.ToLower(t.Term)) {
 				blanked := replaceFirstCI(sent, t.Term, "___")
-				title   := truncate(blanked, 60)
+				title := truncate(blanked, 60)
 				answers := []string{t.Term}
 				if lower := strings.ToLower(t.Term); lower != t.Term {
 					answers = append(answers, lower)
@@ -455,7 +455,7 @@ func genericDistractors(lang string, count int) []string {
 }
 
 func replaceFirstCI(s, old, newStr string) string {
-	lower    := strings.ToLower(s)
+	lower := strings.ToLower(s)
 	lowerOld := strings.ToLower(old)
 	idx := strings.Index(lower, lowerOld)
 	if idx < 0 {
@@ -505,7 +505,7 @@ func parseGIFTToQuestions(giftText, userID, bankID, language, sourceText string)
 			ID: uuid.New().String(), UserID: userID, BankID: bankID,
 			Content: block, SourceText: sourceText, Language: language, Tags: []string{},
 		}
-		q.Type  = detectGIFTType(block)
+		q.Type = detectGIFTType(block)
 		q.Title = extractGIFTTitle(block)
 		if q.Title == "" {
 			q.Title = fmt.Sprintf("Question %s", q.ID[:8])

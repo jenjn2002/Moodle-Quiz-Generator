@@ -673,9 +673,31 @@ select:focus { outline: none; border-color: var(--accent); }
           <div class="page-sub">Import từ GIFT, template TXT/XLSX, hoặc paste trực tiếp</div>
         </div>
         <div class="topbar-actions">
-          <button class="btn btn-ghost btn-sm" onclick="window.location.href='/api/template/txt'" title="Tải mẫu TXT">📄 Mẫu TXT</button>
-          <button class="btn btn-ghost btn-sm" onclick="window.location.href='/api/template/xlsx'" title="Tải mẫu Excel">📊 Mẫu XLSX</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleSamplePanel()" title="Xem/tải mẫu cho từng loại câu hỏi">📋 Mẫu câu hỏi</button>
+          <button class="btn btn-ghost btn-sm" onclick="window.location.href='/api/template/txt'" title="Tải mẫu TXT đầy đủ">📄 Template TXT</button>
+          <button class="btn btn-ghost btn-sm" onclick="window.location.href='/api/template/xlsx'" title="Tải mẫu Excel đầy đủ">📊 Template XLSX</button>
           <button class="btn btn-primary" onclick="importGIFT()">📥 Import & Lưu</button>
+        </div>
+      </div>
+
+      <!-- Sample templates panel -->
+      <div id="sample-panel" style="display:none;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface2);overflow-x:auto;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:13px;font-weight:600;color:var(--text)">📋 Tải mẫu GIFT cho từng loại câu hỏi</span>
+          <span style="font-size:11px;color:var(--text3)">(mỗi mẫu có 3 câu hỏi ví dụ)</span>
+          <button onclick="toggleSamplePanel()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px">✕</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('mc')"><span class="q-type-badge badge-mc" style="margin-right:4px">MCQ</span> Trắc nghiệm</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('tf')"><span class="q-type-badge badge-tf" style="margin-right:4px">T/F</span> Đúng/Sai</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('sa')"><span class="q-type-badge badge-sa" style="margin-right:4px">Fill</span> Điền từ</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('match')"><span class="q-type-badge badge-mt" style="margin-right:4px">Match</span> Nối cặp</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('num')"><span class="q-type-badge badge-num" style="margin-right:4px">NUM</span> Câu hỏi số</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('essay')"><span class="q-type-badge badge-es" style="margin-right:4px">Essay</span> Tự luận</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('mw')"><span class="q-type-badge badge-mw" style="margin-right:4px">MW</span> Điền chỗ trống</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('ma')"><span class="q-type-badge badge-ma" style="margin-right:4px">MA</span> Nhiều đáp án</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('desc')"><span class="q-type-badge badge-desc" style="margin-right:4px">DESC</span> Mô tả</button>
+          <button class="btn btn-secondary btn-sm" onclick="downloadSampleGIFT('all')" style="margin-left:8px">⬇ Tải tất cả</button>
         </div>
       </div>
 
@@ -1386,7 +1408,6 @@ async function importTemplateFile(file) {
     toast('Lỗi: ' + e.message, 'error');
   }
 }
-}
 
 async function importGIFT() {
   const content = document.getElementById('import-content').value.trim();
@@ -1504,6 +1525,176 @@ async function changePassword() {
   } catch(e) {
     toast('Lỗi: ' + e.message, 'error');
   }
+}
+
+// ===== SAMPLE GIFT TEMPLATES =====
+function toggleSamplePanel() {
+  const panel = document.getElementById('sample-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+const SAMPLE_GIFTS = {
+  mc: `// Mẫu: Trắc nghiệm (Multiple Choice) — 3 câu hỏi
+// Mỗi câu có 1 đáp án đúng (=) và các đáp án sai (~)
+
+::Thủ đô Việt Nam::Thủ đô của Việt Nam là thành phố nào? {
+  =Hà Nội
+  ~TP. Hồ Chí Minh
+  ~Đà Nẵng
+  ~Huế
+}
+
+::Hành tinh lớn nhất::Hành tinh lớn nhất trong hệ Mặt Trời là gì? {
+  =Sao Mộc #Đúng! Sao Mộc là hành tinh lớn nhất
+  ~Sao Thổ #Sai, Sao Thổ đứng thứ 2
+  ~Sao Hỏa #Sai
+  ~Sao Kim #Sai
+}
+
+::Ngôn ngữ lập trình::Ngôn ngữ lập trình nào được tạo bởi Guido van Rossum? {
+  =Python
+  ~Java
+  ~C++
+  ~JavaScript
+}
+`,
+  tf: `// Mẫu: Đúng/Sai (True/False) — 3 câu hỏi
+// Đáp án là TRUE hoặc FALSE
+
+::Trái Đất quay quanh Mặt Trời::Trái Đất quay quanh Mặt Trời. {TRUE #Đúng! Trái Đất quay quanh Mặt Trời theo quỹ đạo elip}
+
+::Nước sôi ở 50 độ::Nước sôi ở 50 độ C trong điều kiện áp suất khí quyển tiêu chuẩn. {FALSE #Sai! Nước sôi ở 100 độ C}
+
+::Python là ngôn ngữ lập trình::Python là một ngôn ngữ lập trình. {TRUE}
+`,
+  sa: `// Mẫu: Điền từ ngắn (Short Answer) — 3 câu hỏi
+// Có thể có nhiều đáp án đúng, mỗi đáp án bắt đầu bằng =
+
+::Thủ đô Pháp::Thủ đô của nước Pháp là gì? {
+  =Paris
+  =paris
+  =PARIS
+}
+
+::Hai cộng hai::Hai cộng hai bằng mấy? {
+  =4
+  =bốn
+  =Bốn
+}
+
+::Nguyên tố hóa học::Ký hiệu hóa học của Oxy là gì? {
+  =O
+}
+`,
+  match: `// Mẫu: Nối cặp (Matching) — 3 câu hỏi
+// Cần tối thiểu 3 cặp, dùng = và ->
+
+::Thủ đô châu Á::Nối quốc gia với thủ đô tương ứng {
+  =Việt Nam -> Hà Nội
+  =Nhật Bản -> Tokyo
+  =Hàn Quốc -> Seoul
+  =Thái Lan -> Bangkok
+}
+
+::Ngôn ngữ lập trình::Nối ngôn ngữ lập trình với đặc điểm chính {
+  =Python -> Ngôn ngữ thông dịch
+  =Java -> Write once run anywhere
+  =C -> Lập trình hệ thống
+}
+
+::Thủ đô châu Âu::Nối quốc gia châu Âu với thủ đô {
+  =Pháp -> Paris
+  =Đức -> Berlin
+  =Ý -> Rome
+  =Tây Ban Nha -> Madrid
+}
+`,
+  num: `// Mẫu: Câu hỏi số (Numerical) — 3 câu hỏi
+// Đáp án bắt đầu bằng {# , có thể kèm sai số (:) hoặc khoảng (..)
+
+::Giá trị Pi::Giá trị của số Pi (đến 2 chữ số thập phân)? {#3.14:0.005}
+
+::Số từ 1 đến 5::Cho một số nằm trong khoảng từ 1 đến 5? {#1..5}
+
+::Năm sinh Grant::Ulysses S. Grant sinh năm nào? {#
+  =1822:0 #Chính xác!
+  =%50%1822:2 #Gần đúng, được 50% điểm
+}
+`,
+  essay: `// Mẫu: Tự luận (Essay) — 3 câu hỏi
+// Không có đáp án, chỉ có {} rỗng
+
+::Nguyên nhân Thế chiến II::Hãy trình bày nguyên nhân chính dẫn đến Chiến tranh Thế giới thứ 2. {}
+
+::Biến đổi khí hậu::Phân tích tác động của biến đổi khí hậu đối với Việt Nam. {}
+
+::Trí tuệ nhân tạo::Hãy thảo luận về vai trò của trí tuệ nhân tạo trong giáo dục hiện đại. {}
+`,
+  mw: `// Mẫu: Điền vào chỗ trống / Missing Word — 3 câu hỏi
+// Đáp án nằm giữa câu, tạo chỗ trống tự động
+
+Thủ đô của Việt Nam là {=Hà Nội ~Đà Nẵng ~Huế ~Cần Thơ} nằm bên bờ sông Hồng.
+
+Moodle có giá {~rất đắt =miễn phí ~một ít tiền} để tải về từ moodle.org.
+
+Mahatma Gandhi sinh ngày {~15 ~3 =2} tháng 10.
+`,
+  ma: `// Mẫu: Nhiều đáp án đúng (Multiple Answers) — 3 câu hỏi  
+// Dùng trọng số % cho mỗi đáp án, tổng đáp án đúng = 100%
+// Đáp án sai dùng trọng số âm
+
+::Màu cơ bản RGB::Đâu là các màu trong hệ RGB? {
+  ~%33.33333%Đỏ (Red)
+  ~%33.33333%Xanh lá (Green)
+  ~%33.33334%Xanh dương (Blue)
+  ~%-100%Vàng
+  ~%-100%Tím
+}
+
+::Lăng Grant::Hai người nào được an táng trong lăng Grant? {
+  ~%-100%Không ai
+  ~%50%Grant
+  ~%50%Vợ của Grant
+  ~%-100%Cha của Grant
+}
+
+::Ngôn ngữ scripting::Ngôn ngữ nào là scripting language? {
+  ~%33.33333%Python
+  ~%33.33333%JavaScript
+  ~%33.33334%Ruby
+  ~%-100%C++
+  ~%-100%Java
+}
+`,
+  desc: `// Mẫu: Mô tả (Description) — 3 mô tả
+// Không có đáp án, chỉ là text thông tin
+
+Các câu hỏi sau đây về lịch sử Việt Nam. Bạn có thể dùng giấy và bút để tính toán.
+
+Phần 2\\: Câu hỏi về địa lý thế giới. Hãy đọc kỹ trước khi trả lời.
+
+Lưu ý\\: Phần tiếp theo có giới hạn thời gian 15 phút. Hãy chuẩn bị trước khi bắt đầu.
+`
+};
+
+function downloadSampleGIFT(type) {
+  let content, filename;
+  if (type === 'all') {
+    content = Object.values(SAMPLE_GIFTS).join('\\n\\n');
+    filename = 'mau_tat_ca_loai_cau_hoi.gift';
+  } else {
+    content = SAMPLE_GIFTS[type] || '';
+    const names = {mc:'trac_nghiem',tf:'dung_sai',sa:'dien_tu',match:'noi_cap',num:'cau_hoi_so',essay:'tu_luan',mw:'dien_cho_trong',ma:'nhieu_dap_an',desc:'mo_ta'};
+    filename = 'mau_' + (names[type]||type) + '.gift';
+  }
+  if (!content) return;
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('⬇ Đã tải mẫu ' + type.toUpperCase(), 'info');
 }
 
 // ===== START =====

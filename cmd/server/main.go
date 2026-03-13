@@ -67,7 +67,7 @@ func main() {
 		r.Get("/me", handlers.GetMe)
 		r.Post("/change-password", handlers.ChangePassword)
 
-		// Banks  
+		// Banks
 		r.Get("/banks", handlers.ListBanks)
 		r.Post("/banks", handlers.CreateBank)
 		r.Delete("/banks/{id}", handlers.DeleteBank)

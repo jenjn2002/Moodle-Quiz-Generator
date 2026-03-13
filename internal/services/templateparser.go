@@ -2,15 +2,16 @@
 // and converts them to Moodle GIFT format.
 //
 // Supported question types (per Moodle GIFT spec):
-//   MC    – Multiple Choice (single correct)
-//   MA    – Multiple Answers (multiple correct with percentage weights)
-//   TF    – True / False
-//   SA    – Short Answer
-//   MATCH – Matching
-//   MW    – Missing Word (fill-in-the-blank inside a sentence)
-//   NUM   – Numerical (with tolerance or range)
-//   ESSAY – Essay (open-ended, no answer)
-//   DESC  – Description (informational text, no answer)
+//
+//	MC    – Multiple Choice (single correct)
+//	MA    – Multiple Answers (multiple correct with percentage weights)
+//	TF    – True / False
+//	SA    – Short Answer
+//	MATCH – Matching
+//	MW    – Missing Word (fill-in-the-blank inside a sentence)
+//	NUM   – Numerical (with tolerance or range)
+//	ESSAY – Essay (open-ended, no answer)
+//	DESC  – Description (informational text, no answer)
 package services
 
 import (
