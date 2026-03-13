@@ -317,15 +317,14 @@ func ExportGIFT(w http.ResponseWriter, r *http.Request) {
 
 	var sb strings.Builder
 
-
 	for _, q := range questions {
 		sb.WriteString(q.Content)
 		sb.WriteString("\n\n")
 	}
 
-	filename := "questions.gift"
+	filename := "questions.txt"
 	if bankID != "" && len(bankID) >= 8 {
-		filename = fmt.Sprintf("bank_%s.gift", bankID[:8])
+		filename = fmt.Sprintf("bank_%s.txt", bankID[:8])
 	}
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")

@@ -1235,7 +1235,7 @@ function downloadGIFT() {
   const blob = new Blob([state.generatedGIFT], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `questions_${Date.now()}.gift`;
+  a.download = `questions_${Date.now()}.txt`;
   a.click();
   toast('⬇ Đang tải file...', 'info');
 }
@@ -1825,11 +1825,11 @@ function downloadSampleGIFT(type) {
   let content, filename;
   if (type === 'all') {
     content = Object.values(SAMPLE_GIFTS).join('\\n\\n');
-    filename = 'mau_tat_ca_loai_cau_hoi.gift';
+    filename = 'mau_tat_ca_loai_cau_hoi.txt';
   } else {
     content = SAMPLE_GIFTS[type] || '';
     const names = {mc:'trac_nghiem',tf:'dung_sai',sa:'dien_tu',match:'noi_cap',num:'cau_hoi_so',essay:'tu_luan',mw:'dien_cho_trong',ma:'nhieu_dap_an',desc:'mo_ta'};
-    filename = 'mau_' + (names[type]||type) + '.gift';
+    filename = 'mau_' + (names[type]||type) + '.txt';
   }
   if (!content) return;
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });

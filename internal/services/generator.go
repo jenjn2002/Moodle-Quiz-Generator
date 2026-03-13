@@ -83,7 +83,6 @@ func GenerateQuestions(req *models.GenerateRequest, userID string) ([]models.Que
 	var questions []models.Question
 	var giftLines []string
 
-
 	seenBlocks := map[string]bool{}
 	maxAttempts := req.Count * 10
 	attempts := 0
