@@ -1172,14 +1172,56 @@ async function handleFileUpload(input) {
   const file = input.files[0];
   if (!file) return;
   const ext = file.name.split('.').pop().toLowerCase();
-  // XLSX files are question templates — redirect to template import
+  // XLSX files are question templates — import and display on Generate page
   if (ext === 'xlsx') {
-    await importTemplateFile(file);
+    await importTemplateToGenerate(file);
     input.value = '';
     return;
   }
   await uploadAndSetSource(file);
   input.value = ''; // reset so same file can be re-uploaded
+}
+
+// Import XLSX template and show results on the Generate page output panel
+async function importTemplateToGenerate(file) {
+  const bankID = document.getElementById('q-bank') ? document.getElementById('q-bank').value : '';
+  toast(`⏳ Đang chuyển đổi template ${file.name}...`, 'info');
+
+  const btn = document.getElementById('btn-generate');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Đang import...'; }
+  document.getElementById('gen-loading').classList.add('show');
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (bankID) formData.append('bank_id', bankID);
+
+    const r = await fetch('/api/import-template', { method: 'POST', body: formData });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+
+    // Display in Generate page output panel
+    state.generatedGIFT = data.gift_text || '';
+    state.generatedQuestions = data.questions || [];
+
+    renderGeneratedCards(data.questions || []);
+    document.getElementById('raw-output').textContent = data.gift_text || '';
+    document.getElementById('raw-output').style.display = 'block';
+    document.getElementById('raw-placeholder').style.display = 'none';
+    document.getElementById('output-actions').style.display = 'flex';
+
+    // Show file info banner
+    showFileInfoBanner('📊', `${file.name} · ${data.imported} câu hỏi đã import`);
+
+    toast(`✅ Đã import ${data.imported} câu hỏi từ template!`, 'success');
+    await loadBanks();
+    loadQuestions();
+  } catch(e) {
+    toast('Lỗi: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span>✨</span> Generate'; }
+    document.getElementById('gen-loading').classList.remove('show');
+  }
 }
 
 async function uploadAndSetSource(file) {
