@@ -567,6 +567,9 @@ select:focus { outline: none; border-color: var(--accent); }
             <option value="10">10 câu</option>
             <option value="15">15 câu</option>
             <option value="20">20 câu</option>
+            <option value="30">30 câu</option>
+            <option value="50">50 câu</option>
+            <option value="100">100 câu</option>
           </select>
         </div>
         <div class="config-group">
@@ -1057,7 +1060,7 @@ function copyQuestionAtIndex(btn) {
   const idx = parseInt(btn.dataset.qi);
   const q = state.questions[idx];
   if (q) {
-    navigator.clipboard.writeText(q.content).catch(() => {});
+    clipboardCopy(q.content);
     toast('✅ Đã copy!', 'success');
   }
 }
@@ -1192,7 +1195,7 @@ function copyGenQuestionAtIndex(btn) {
   const idx = parseInt(btn.dataset.gi);
   const q = state.generatedQuestions[idx];
   if (q) {
-    navigator.clipboard.writeText(q.content).catch(() => {});
+    clipboardCopy(q.content);
     toast('✅ Đã copy!', 'success');
   }
 }
@@ -1221,9 +1224,9 @@ function clearGenerate() {
   state.generatedGIFT = '';
 }
 
-async function copyGIFT() {
+function copyGIFT() {
   if (!state.generatedGIFT) return;
-  await navigator.clipboard.writeText(state.generatedGIFT);
+  clipboardCopy(state.generatedGIFT);
   toast('✅ Đã copy GIFT format!', 'success');
 }
 
@@ -1255,6 +1258,7 @@ async function handleFileUpload(input) {
 // Import XLSX template and show results on the Generate page output panel
 async function importTemplateToGenerate(file) {
   const bankID = document.getElementById('q-bank') ? document.getElementById('q-bank').value : '';
+  const selectedTypes = [...document.querySelectorAll('.chip.selected')].map(c => c.dataset.type);
   toast(`⏳ Đang chuyển đổi template ${file.name}...`, 'info');
 
   const btn = document.getElementById('btn-generate');
@@ -1265,6 +1269,7 @@ async function importTemplateToGenerate(file) {
     const formData = new FormData();
     formData.append('file', file);
     if (bankID) formData.append('bank_id', bankID);
+    if (selectedTypes.length > 0) formData.append('question_types', selectedTypes.join(','));
 
     const r = await fetch('/api/import-template', { method: 'POST', body: formData });
     const data = await r.json();
@@ -1624,9 +1629,23 @@ function escAttr(s) {
   return String(s || '').replace(/'/g, '\\\'').replace(/\n/g, '\\n');
 }
 
+function clipboardCopy(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => {});
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+}
+
 async function copyText(text) {
   const decoded = text.replace(/\\n/g, '\n').replace(/\\\'/g, "'");
-  await navigator.clipboard.writeText(decoded).catch(() => {});
+  clipboardCopy(decoded);
   toast('✅ Đã copy!', 'success');
 }
 

@@ -511,6 +511,22 @@ func ImportTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Filter by selected question types if provided
+	if typesParam := r.FormValue("question_types"); typesParam != "" {
+		allowed := make(map[string]bool)
+		for _, t := range strings.Split(typesParam, ",") {
+			allowed[strings.TrimSpace(t)] = true
+		}
+		var filtered []services.TemplateQuestion
+		for _, tq := range tplQuestions {
+			dbType := services.TemplateQuestionToDBType(tq.Type)
+			if allowed[dbType] {
+				filtered = append(filtered, tq)
+			}
+		}
+		tplQuestions = filtered
+	}
+
 	// Convert to GIFT
 	giftText := services.ConvertToGIFT(tplQuestions)
 

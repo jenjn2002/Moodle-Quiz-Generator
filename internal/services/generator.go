@@ -27,9 +27,7 @@ func GenerateQuestions(req *models.GenerateRequest, userID string) ([]models.Que
 	if req.Count == 0 {
 		req.Count = 5
 	}
-	if req.Count > 30 {
-		req.Count = 30
-	}
+
 	if req.Language == "" {
 		req.Language = "vi"
 	}
