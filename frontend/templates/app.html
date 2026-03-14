@@ -360,23 +360,6 @@ select:focus { outline: none; border-color: var(--accent); }
 .q-row-meta { font-size: 11px; color: var(--text3); margin-top: 4px; }
 .q-row-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
-/* ===== IMPORT VIEW ===== */
-.import-layout {
-  display: grid; grid-template-columns: 1fr 1fr;
-  flex: 1; overflow: hidden;
-}
-
-.dropzone {
-  border: 2px dashed var(--border2); border-radius: 12px;
-  padding: 32px; text-align: center;
-  transition: all 0.2s; cursor: pointer;
-  margin-bottom: 12px;
-}
-.dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: var(--accent-glow); }
-.dropzone-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.5; }
-.dropzone-text { font-size: 13px; color: var(--text2); }
-.dropzone-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
-
 /* ===== MODAL ===== */
 .modal-backdrop {
   display: none; position: fixed; inset: 0; z-index: 100;
@@ -492,9 +475,7 @@ select:focus { outline: none; border-color: var(--accent); }
         <button class="nav-item active" onclick="showView('generate')" id="nav-generate">
           <span class="icon">✨</span> Tạo câu hỏi
         </button>
-        <button class="nav-item" onclick="showView('import')" id="nav-import">
-          <span class="icon">📥</span> Import GIFT
-        </button>
+
         <button class="nav-item" onclick="showView('questions')" id="nav-questions">
           <span class="icon">📚</span> Ngân hàng câu hỏi
           <span class="badge" id="total-badge">0</span>
@@ -537,6 +518,9 @@ select:focus { outline: none; border-color: var(--accent); }
           <div class="page-sub">Nhập nội dung → Chọn loại câu hỏi → Generate GIFT format</div>
         </div>
         <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="toggleSamplePanel()" title="Xem/tải mẫu cho từng loại câu hỏi">📋 Mẫu câu hỏi</button>
+          <button class="btn btn-ghost btn-sm" onclick="window.location.href='/api/template/txt'" title="Tải mẫu TXT đầy đủ">📄 Template TXT</button>
+          <button class="btn btn-ghost btn-sm" onclick="window.location.href='/api/template/xlsx'" title="Tải mẫu Excel đầy đủ">📊 Template XLSX</button>
           <button class="btn btn-ghost btn-sm" onclick="clearGenerate()">🗑 Xóa</button>
           <button class="btn btn-primary" id="btn-generate" onclick="generateQuestions()">
             <span>✨</span> Generate
@@ -559,39 +543,33 @@ select:focus { outline: none; border-color: var(--accent); }
             <div class="chip" data-type="multiple_answer" onclick="toggleChip(this)">Nhiều đáp án</div>
           </div>
         </div>
-        <div class="config-group">
-          <div class="config-label">Số lượng</div>
-          <select id="q-count">
-            <option value="3">3 câu</option>
-            <option value="5" selected>5 câu</option>
-            <option value="10">10 câu</option>
-            <option value="15">15 câu</option>
-            <option value="20">20 câu</option>
-            <option value="30">30 câu</option>
-            <option value="50">50 câu</option>
-            <option value="100">100 câu</option>
-          </select>
-        </div>
-        <div class="config-group">
-          <div class="config-label">Ngôn ngữ</div>
-          <select id="q-lang">
-            <option value="vi">🇻🇳 Tiếng Việt</option>
-            <option value="en">🇬🇧 English</option>
-          </select>
-        </div>
-        <div class="config-group">
-          <div class="config-label">Độ khó</div>
-          <select id="q-diff">
-            <option value="easy">Dễ</option>
-            <option value="medium" selected>Vừa</option>
-            <option value="hard">Khó</option>
-          </select>
-        </div>
+
         <div class="config-group">
           <div class="config-label">Lưu vào</div>
           <select id="q-bank">
             <option value="">Không lưu vào bộ</option>
           </select>
+        </div>
+      </div>
+
+      <!-- Sample templates panel -->
+      <div id="sample-panel" style="display:none;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface2);overflow-x:auto;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:13px;font-weight:600;color:var(--text)">📋 Tải mẫu GIFT cho từng loại câu hỏi</span>
+          <span style="font-size:11px;color:var(--text3)">(mỗi mẫu có 3 câu hỏi ví dụ)</span>
+          <button onclick="toggleSamplePanel()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px">✕</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('mc')"><span class="q-type-badge badge-mc" style="margin-right:4px">MCQ</span> Trắc nghiệm</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('tf')"><span class="q-type-badge badge-tf" style="margin-right:4px">T/F</span> Đúng/Sai</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('sa')"><span class="q-type-badge badge-sa" style="margin-right:4px">Fill</span> Điền từ</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('match')"><span class="q-type-badge badge-mt" style="margin-right:4px">Match</span> Nối cặp</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('num')"><span class="q-type-badge badge-num" style="margin-right:4px">NUM</span> Câu hỏi số</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('essay')"><span class="q-type-badge badge-es" style="margin-right:4px">Essay</span> Tự luận</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('mw')"><span class="q-type-badge badge-mw" style="margin-right:4px">MW</span> Điền chỗ trống</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('ma')"><span class="q-type-badge badge-ma" style="margin-right:4px">MA</span> Nhiều đáp án</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('desc')"><span class="q-type-badge badge-desc" style="margin-right:4px">DESC</span> Mô tả</button>
+          <button class="btn btn-secondary btn-sm" onclick="downloadSampleGIFT('all')" style="margin-left:8px">⬇ Tải tất cả</button>
         </div>
       </div>
 
@@ -602,7 +580,6 @@ select:focus { outline: none; border-color: var(--accent); }
             <span>📄</span>
             <span class="panel-title">Nội dung nguồn</span>
             <div class="panel-actions">
-              <button class="btn btn-ghost btn-sm" onclick="openUrlFetch()" title="Lấy nội dung từ URL">🌐 Từ URL</button>
               <label class="btn btn-ghost btn-sm" style="cursor:pointer" title="Hỗ trợ: PDF, DOCX, TXT, GIFT, XLSX">
                 📎 Upload
                 <input type="file" id="file-upload" accept=".txt,.gift,.pdf,.docx,.doc,.xlsx" style="display:none" onchange="handleFileUpload(this)">
@@ -615,15 +592,7 @@ select:focus { outline: none; border-color: var(--accent); }
             <span id="file-info-text"></span>
             <button onclick="clearFileInfo()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#64748b;font-size:14px;">✕</button>
           </div>
-          <!-- URL fetch bar -->
-          <div id="url-fetch-bar" style="display:none;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0;">
-            <div style="display:flex;gap:8px;align-items:center;">
-              <input id="url-input" type="url" placeholder="https://example.com/article..." class="form-input" style="flex:1;padding:7px 10px;font-size:12.5px;" onkeydown="if(event.key==='Enter')fetchUrl()">
-              <button class="btn btn-primary btn-sm" onclick="fetchUrl()">Lấy nội dung</button>
-              <button class="btn btn-ghost btn-sm" onclick="closeUrlFetch()">✕</button>
-            </div>
-            <div style="font-size:11px;color:var(--text3);margin-top:5px;">⚠️ Chỉ hoạt động với trang không yêu cầu đăng nhập. Nội dung sẽ được trích xuất phía server.</div>
-          </div>
+
           <div class="panel-body" style="display:flex;flex-direction:column;gap:10px;padding:16px;">
             <textarea id="source-text" placeholder="Dán nội dung tài liệu vào đây...&#10;&#10;Hoặc sử dụng:&#10;📎 Upload — PDF, DOCX, TXT&#10;🌐 Từ URL — lấy nội dung trang web" style="flex:1;min-height:300px;"></textarea>
           </div>
@@ -668,111 +637,6 @@ select:focus { outline: none; border-color: var(--accent); }
       </div>
     </div>
 
-    <!-- ===== IMPORT VIEW ===== -->
-    <div class="view" id="view-import">
-      <div class="topbar">
-        <div>
-          <div class="page-title">📥 Import câu hỏi</div>
-          <div class="page-sub">Import từ GIFT, template TXT/XLSX, hoặc paste trực tiếp</div>
-        </div>
-        <div class="topbar-actions">
-          <button class="btn btn-ghost btn-sm" onclick="toggleSamplePanel()" title="Xem/tải mẫu cho từng loại câu hỏi">📋 Mẫu câu hỏi</button>
-          <button class="btn btn-ghost btn-sm" onclick="window.location.href='/api/template/txt'" title="Tải mẫu TXT đầy đủ">📄 Template TXT</button>
-          <button class="btn btn-ghost btn-sm" onclick="window.location.href='/api/template/xlsx'" title="Tải mẫu Excel đầy đủ">📊 Template XLSX</button>
-          <button class="btn btn-primary" onclick="importGIFT()">📥 Import & Lưu</button>
-        </div>
-      </div>
-
-      <!-- Sample templates panel -->
-      <div id="sample-panel" style="display:none;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface2);overflow-x:auto;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <span style="font-size:13px;font-weight:600;color:var(--text)">📋 Tải mẫu GIFT cho từng loại câu hỏi</span>
-          <span style="font-size:11px;color:var(--text3)">(mỗi mẫu có 3 câu hỏi ví dụ)</span>
-          <button onclick="toggleSamplePanel()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px">✕</button>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;">
-          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('mc')"><span class="q-type-badge badge-mc" style="margin-right:4px">MCQ</span> Trắc nghiệm</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('tf')"><span class="q-type-badge badge-tf" style="margin-right:4px">T/F</span> Đúng/Sai</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('sa')"><span class="q-type-badge badge-sa" style="margin-right:4px">Fill</span> Điền từ</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('match')"><span class="q-type-badge badge-mt" style="margin-right:4px">Match</span> Nối cặp</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('num')"><span class="q-type-badge badge-num" style="margin-right:4px">NUM</span> Câu hỏi số</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('essay')"><span class="q-type-badge badge-es" style="margin-right:4px">Essay</span> Tự luận</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('mw')"><span class="q-type-badge badge-mw" style="margin-right:4px">MW</span> Điền chỗ trống</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('ma')"><span class="q-type-badge badge-ma" style="margin-right:4px">MA</span> Nhiều đáp án</button>
-          <button class="btn btn-ghost btn-sm" onclick="downloadSampleGIFT('desc')"><span class="q-type-badge badge-desc" style="margin-right:4px">DESC</span> Mô tả</button>
-          <button class="btn btn-secondary btn-sm" onclick="downloadSampleGIFT('all')" style="margin-left:8px">⬇ Tải tất cả</button>
-        </div>
-      </div>
-
-      <div class="import-layout">
-        <div class="panel">
-          <div class="panel-header">
-            <span>📋</span>
-            <span class="panel-title">Nội dung GIFT / Template</span>
-            <div class="panel-actions">
-              <label class="btn btn-ghost btn-sm" style="cursor:pointer">
-                📎 Upload file
-                <input type="file" accept=".gift,.txt,.pdf,.docx,.xlsx" style="display:none" onchange="handleImportFile(this)">
-              </label>
-            </div>
-          </div>
-          <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;">
-            <div class="dropzone" id="import-dropzone" onclick="document.getElementById('import-file').click()">
-              <input type="file" id="import-file" accept=".gift,.txt,.pdf,.docx,.xlsx" style="display:none" onchange="handleImportFile(this)">
-              <div class="dropzone-icon">📁</div>
-              <div class="dropzone-text">Kéo thả file vào đây</div>
-              <div class="dropzone-sub">GIFT, TXT (template), XLSX (template), PDF, DOCX — tối đa 20 MB</div>
-            </div>
-
-            <!-- Template info banner -->
-            <div id="template-info" style="display:none;padding:10px 14px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);border-radius:8px;font-size:12px;color:#a78bfa;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                <span>📊</span>
-                <strong id="template-info-title">Template đã được chuyển đổi sang GIFT</strong>
-                <button onclick="document.getElementById('template-info').style.display='none'" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#64748b">✕</button>
-              </div>
-              <div id="template-info-detail" style="font-size:11px;color:#94a3b8"></div>
-            </div>
-
-            <textarea id="import-content" placeholder="Hoặc paste nội dung GIFT vào đây...
-
-Ví dụ:
-::Q1:: Thủ đô của Việt Nam là gì? {
-=Hà Nội
-~TP. Hồ Chí Minh
-~Đà Nẵng
-~Huế
-}
-
-::Q2:: Việt Nam nằm ở khu vực Đông Nam Á. { TRUE }" style="flex:1;min-height:300px;font-family:var(--mono);font-size:12.5px"></textarea>
-
-            <div style="display:flex;gap:10px;align-items:center">
-              <div style="flex:1">
-                <div class="config-label" style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:4px;">LƯU VÀO BỘ</div>
-                <select id="import-bank" style="width:100%">
-                  <option value="">Không lưu vào bộ</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <span>👁</span>
-            <span class="panel-title">Preview</span>
-            <span id="import-count" style="font-size:11px;color:var(--text3);margin-left:auto"></span>
-          </div>
-          <div class="panel-body" id="import-preview">
-            <div class="output-empty">
-              <div class="big-icon">👁</div>
-              <p>Preview câu hỏi sẽ hiện ở đây sau khi bạn nhập nội dung GIFT</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ===== QUESTIONS VIEW ===== -->
     <div class="view" id="view-questions">
       <div class="topbar">
@@ -792,7 +656,8 @@ Ví dụ:
           Chọn tất cả
         </label>
         <span id="selected-count" style="font-size:12px;color:var(--text3);margin-left:4px;">0 đã chọn</span>
-        <button class="btn btn-danger btn-sm" onclick="bulkDeleteSelected()" style="margin-left:auto;">🗑 Xóa đã chọn</button>
+        <button class="btn btn-success btn-sm" onclick="exportQuestions()" style="margin-left:auto;">⬇ Export đã chọn</button>
+        <button class="btn btn-danger btn-sm" onclick="bulkDeleteSelected()">🗑 Xóa đã chọn</button>
         <button class="btn btn-ghost btn-sm" onclick="exitBulkMode()">✕ Hủy</button>
       </div>
 
@@ -890,8 +755,6 @@ async function init() {
   await loadUser();
   await loadBanks();
   await loadQuestions();
-  setupImportPreview();
-  setupDragDrop();
 }
 
 // ===== API =====
@@ -953,7 +816,7 @@ function renderBanks() {
 }
 
 function updateBankSelects() {
-  const selects = ['q-bank', 'import-bank'];
+  const selects = ['q-bank'];
   selects.forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
@@ -1142,9 +1005,6 @@ async function generateQuestions() {
     const result = await api('POST', '/generate', {
       source_text: sourceText,
       question_types: selectedTypes,
-      count: parseInt(document.getElementById('q-count').value),
-      language: document.getElementById('q-lang').value,
-      difficulty: document.getElementById('q-diff').value,
       bank_id: document.getElementById('q-bank').value
     });
 
@@ -1344,234 +1204,22 @@ function clearFileInfo() {
   document.getElementById('source-text').value = '';
 }
 
-// ===== URL FETCH =====
-function openUrlFetch() {
-  document.getElementById('url-fetch-bar').style.display = 'block';
-  setTimeout(() => document.getElementById('url-input').focus(), 50);
-}
-
-function closeUrlFetch() {
-  document.getElementById('url-fetch-bar').style.display = 'none';
-  document.getElementById('url-input').value = '';
-}
-
-async function fetchUrl() {
-  const url = document.getElementById('url-input').value.trim();
-  if (!url) { toast('Nhập URL cần lấy nội dung', 'error'); return; }
-  if (!url.startsWith('http')) { toast('URL phải bắt đầu bằng http:// hoặc https://', 'error'); return; }
-
-  const btn = event.target;
-  btn.disabled = true; btn.textContent = 'Đang lấy...';
-
-  try {
-    const r = await fetch('/api/fetch-url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    });
-    const data = await r.json();
-    if (data.error) throw new Error(data.error);
-
-    document.getElementById('source-text').value = data.content;
-    showFileInfoBanner('🌐', `${data.title || url} · ${data.word_count.toLocaleString()} từ`);
-    closeUrlFetch();
-    toast(`✅ Đã lấy nội dung từ URL!`, 'success');
-  } catch(e) {
-    toast('Lỗi lấy URL: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Lấy nội dung';
-  }
-}
-
-// ===== IMPORT =====
-function setupImportPreview() {
-  document.getElementById('import-content').addEventListener('input', previewImport);
-}
-
-function previewImport() {
-  const content = document.getElementById('import-content').value;
-  if (!content.trim()) {
-    document.getElementById('import-preview').innerHTML = `<div class="output-empty"><div class="big-icon">👁</div><p>Preview câu hỏi</p></div>`;
-    document.getElementById('import-count').textContent = '';
-    return;
-  }
-  const questions = quickParseGIFT(content);
-  document.getElementById('import-count').textContent = `${questions.length} câu hỏi`;
-  if (questions.length === 0) {
-    document.getElementById('import-preview').innerHTML = `<div class="output-empty"><div class="big-icon">⚠️</div><p>Không tìm thấy câu hỏi GIFT hợp lệ</p></div>`;
-    return;
-  }
-  document.getElementById('import-preview').innerHTML = questions.slice(0,20).map((q, i) => `
-    <div class="q-card" style="animation-delay:${i*0.05}s">
-      <div class="q-card-header">
-        <span class="q-type-badge ${typeBadgeClass(q.type)}">${typeLabel(q.type)}</span>
-        <div class="q-title">${escHtml(q.title)}</div>
-      </div>
-      <pre class="q-gift">${escHtml(q.content.slice(0,200))}</pre>
-    </div>
-  `).join('');
-}
-
-function quickParseGIFT(text) {
-  const blocks = text.split(/\n\s*\n/).filter(b => {
-    const t = b.trim();
-    if (!t) return false;
-    if (t.startsWith('//')) return false;
-    if (t.startsWith('$CATEGORY:')) return false;
-    return true;
-  });
-  return blocks.map(b => ({
-    title: extractTitle(b),
-    type: detectType(b),
-    content: b.trim()
-  }));
-}
-
-function extractTitle(block) {
-  if (block.startsWith('::')) {
-    const end = block.indexOf('::', 2);
-    if (end > 0) return block.slice(2, end).trim();
-  }
-  const q = block.replace(/\{[\s\S]*\}/, '').trim();
-  return q.slice(0, 60) + (q.length > 60 ? '...' : '');
-}
-
-function detectType(block) {
-  if (!block.includes('{')) return 'description';
-  if (block.includes('->')) return 'matching';
-  if (/\{#/.test(block)) return 'numerical';
-  if (/~%[\d.-]+%/.test(block)) return 'multiple_answer';
-  if (block.includes('~')) {
-    // Check if it's missing word (answers in middle of text)
-    const braceEnd = block.indexOf('}');
-    if (braceEnd > 0 && braceEnd < block.length - 5) return 'missing_word';
-    return 'multiple_choice';
-  }
-  if (/TRUE|FALSE/.test(block) && !block.includes('~')) return 'true_false';
-  const inner = block.replace(/[\s\S]*\{/, '').replace(/\}[\s\S]*/, '').trim();
-  if (!inner) return 'essay';
-  return 'short_answer';
-}
-
-async function handleImportFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const ext = file.name.split('.').pop().toLowerCase();
-
-  // Template files (.txt with TYPE: headers, .xlsx) → use template parser
-  if (ext === 'xlsx') {
-    await importTemplateFile(file);
-    input.value = '';
-    return;
-  }
-
-  // For .txt files, check if it's a template format (has TYPE: lines)
-  if (ext === 'txt') {
-    const text = await file.text();
-    if (/^TYPE:\s*(MC|TF|SA|MATCH|NUM|ESSAY|MW|MA|DESC)/mi.test(text)) {
-      // It's a template file — convert via server
-      await importTemplateFile(file);
-      input.value = '';
-      return;
-    }
-    // Otherwise treat as plain text/GIFT
-    document.getElementById('import-content').value = text;
-    previewImport();
-    toast(`✅ Đã tải: ${file.name}`, 'success');
-    input.value = '';
-    return;
-  }
-
-  // For PDF/DOCX, use server extraction
-  if (['pdf', 'docx', 'doc'].includes(ext)) {
-    toast(`⏳ Đang trích xuất text từ ${file.name}...`, 'info');
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const r = await fetch('/api/upload', { method: 'POST', body: formData });
-      const data = await r.json();
-      if (data.error) throw new Error(data.error);
-      document.getElementById('import-content').value = data.content;
-      previewImport();
-      toast(`✅ Đã trích xuất từ ${data.filename} (${data.word_count.toLocaleString()} từ)`, 'success');
-    } catch(e) {
-      toast('Lỗi: ' + e.message, 'error');
-    }
-  } else {
-    // Plain text — read client-side instantly (.gift files etc)
-    const text = await file.text();
-    document.getElementById('import-content').value = text;
-    previewImport();
-    toast(`✅ Đã tải: ${file.name}`, 'success');
-  }
-  input.value = '';
-}
-
-// Import template file (.txt template or .xlsx) via server API
-async function importTemplateFile(file) {
-  const bankID = document.getElementById('import-bank').value;
-  toast(`⏳ Đang chuyển đổi template ${file.name}...`, 'info');
-
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (bankID) formData.append('bank_id', bankID);
-
-    const r = await fetch('/api/import-template', { method: 'POST', body: formData });
-    const data = await r.json();
-    if (data.error) throw new Error(data.error);
-
-    // Show GIFT in textarea
-    document.getElementById('import-content').value = data.gift_text || '';
-    previewImport();
-
-    // Show template info banner
-    const info = document.getElementById('template-info');
-    info.style.display = 'block';
-    document.getElementById('template-info-title').textContent = `✅ Đã chuyển đổi ${data.imported} câu hỏi từ template`;
-    document.getElementById('template-info-detail').textContent = `File: ${file.name} → GIFT format. Câu hỏi đã được lưu tự động.`;
-
-    toast(`✅ Đã import ${data.imported} câu hỏi từ template!`, 'success');
-    await loadBanks();
-    loadQuestions();
-  } catch(e) {
-    toast('Lỗi: ' + e.message, 'error');
-  }
-}
-
-async function importGIFT() {
-  const content = document.getElementById('import-content').value.trim();
-  if (!content) { toast('Nhập nội dung GIFT', 'error'); return; }
-  try {
-    const result = await api('POST', '/import', {
-      gift_content: content,
-      bank_id: document.getElementById('import-bank').value
-    });
-    toast(`✅ Đã import ${result.imported} câu hỏi!`, 'success');
-    document.getElementById('import-content').value = '';
-    document.getElementById('import-preview').innerHTML = `<div class="output-empty"><div class="big-icon">✅</div><p>Import thành công ${result.imported} câu hỏi</p></div>`;
-    await loadBanks();
-    loadQuestions();
-  } catch(e) { toast(e.message, 'error'); }
-}
-
-function setupDragDrop() {
-  const dz = document.getElementById('import-dropzone');
-  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
-  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-  dz.addEventListener('drop', async e => {
-    e.preventDefault(); dz.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      // Reuse same logic as file input
-      const mockInput = { files: [file], value: '' };
-      await handleImportFile(mockInput);
-    }
-  });
-}
-
 // ===== EXPORT =====
 async function exportQuestions() {
+  // If bulk mode is active, export only selected questions
+  if (state.bulkMode) {
+    const ids = Array.from(document.querySelectorAll('.q-bulk-cb:checked')).map(cb => cb.dataset.id);
+    if (!ids.length) return toast('Chưa chọn câu hỏi nào', 'error');
+    const selected = state.questions.filter(q => ids.includes(q.id));
+    const content = selected.map(q => q.content).join('\n\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `questions_selected_${Date.now()}.txt`;
+    a.click();
+    toast(`⬇ Đang tải ${selected.length} câu hỏi...`, 'info');
+    return;
+  }
   let url = '/api/export?';
   if (state.currentBank) url += `bank_id=${state.currentBank}&`;
   const type = document.getElementById('filter-type').value;
