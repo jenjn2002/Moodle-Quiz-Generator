@@ -141,6 +141,10 @@ func GetSessionUser(token string) (*models.User, error) {
 	return u, err
 }
 
+func ExtendSession(token string, newExpiry time.Time) {
+	DB.Exec(`UPDATE sessions SET expires_at=$1 WHERE token=$2`, newExpiry, token)
+}
+
 func DeleteSession(token string) error {
 	_, err := DB.Exec(`DELETE FROM sessions WHERE token=$1`, token)
 	return err

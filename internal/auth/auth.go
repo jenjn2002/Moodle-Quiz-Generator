@@ -125,6 +125,23 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func refreshSession(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		return
+	}
+	newExpiry := time.Now().Add(24 * time.Hour)
+	db.ExtendSession(cookie.Value, newExpiry)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    cookie.Value,
+		Path:     "/",
+		Expires:  newExpiry,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
 func RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, err := GetCurrentUser(r)
@@ -132,6 +149,7 @@ func RequireAuth(next http.Handler) http.Handler {
 			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 			return
 		}
+		refreshSession(w, r)
 		ctx := context.WithValue(r.Context(), "user", user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -146,6 +164,7 @@ func RequireAuthAPI(next http.Handler) http.Handler {
 			w.Write([]byte(`{"error":"unauthorized"}`))
 			return
 		}
+		refreshSession(w, r)
 		ctx := context.WithValue(r.Context(), "user", user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
