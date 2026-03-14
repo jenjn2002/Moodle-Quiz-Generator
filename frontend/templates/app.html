@@ -496,11 +496,11 @@ select:focus { outline: none; border-color: var(--accent); }
     <div class="sidebar-footer">
       <div class="user-card" id="user-card">
         <div class="user-avatar" id="user-avatar">U</div>
-        <div>
-          <div class="user-name" id="user-name">Loading...</div>
-          <div class="user-email" id="user-email"></div>
+        <div style="min-width:0;flex:1;overflow:hidden;">
+          <div class="user-name" id="user-name" style="overflow:hidden;text-overflow:ellipsis;">Loading...</div>
+          <div class="user-email" id="user-email" style="overflow:hidden;text-overflow:ellipsis;"></div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:4px;margin-left:auto;">
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
           <button onclick="openModal('modal-password')" class="logout-btn" style="white-space:nowrap;">🔐 Đổi MK</button>
           <a href="/auth/logout" class="logout-btn" onclick="return confirm('Đăng xuất?')" style="text-align:center;">Thoát</a>
         </div>
@@ -594,7 +594,7 @@ select:focus { outline: none; border-color: var(--accent); }
           </div>
 
           <div class="panel-body" style="display:flex;flex-direction:column;gap:10px;padding:16px;">
-            <textarea id="source-text" placeholder="Dán nội dung tài liệu vào đây...&#10;&#10;Hoặc sử dụng:&#10;📎 Upload — PDF, DOCX, TXT&#10;🌐 Từ URL — lấy nội dung trang web" style="flex:1;min-height:300px;"></textarea>
+            <textarea id="source-text" placeholder="Dán nội dung tài liệu vào đây...&#10;&#10;Hoặc sử dụng:&#10;📎 Upload — PDF, DOCX, TXT&#10;" style="flex:1;min-height:300px;"></textarea>
           </div>
         </div>
 
