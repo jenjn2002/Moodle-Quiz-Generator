@@ -21,6 +21,11 @@ import (
 	"golang.org/x/oauth2/microsoft"
 )
 
+// contextKey is a custom type for context keys to avoid collisions.
+type contextKey string
+
+const userContextKey contextKey = "user"
+
 var oauthConfig *oauth2.Config
 
 func Init() {
@@ -150,7 +155,7 @@ func RequireAuth(next http.Handler) http.Handler {
 			return
 		}
 		refreshSession(w, r)
-		ctx := context.WithValue(r.Context(), "user", user)
+		ctx := context.WithValue(r.Context(), userContextKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -165,13 +170,13 @@ func RequireAuthAPI(next http.Handler) http.Handler {
 			return
 		}
 		refreshSession(w, r)
-		ctx := context.WithValue(r.Context(), "user", user)
+		ctx := context.WithValue(r.Context(), userContextKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func UserFromCtx(ctx context.Context) *models.User {
-	u, _ := ctx.Value("user").(*models.User)
+	u, _ := ctx.Value(userContextKey).(*models.User)
 	return u
 }
 
