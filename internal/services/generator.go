@@ -268,7 +268,7 @@ func buildMC(sents []string, terms []KeyTerm, rng *rand.Rand, lang string) (stri
 		question = replaceFirstCI(sent, chosenTerm.Term, "___")
 		correct = chosenTerm.Term
 		for _, t := range terms {
-			if strings.ToLower(t.Term) != strings.ToLower(chosenTerm.Term) {
+			if !strings.EqualFold(t.Term, chosenTerm.Term) {
 				distractors = append(distractors, t.Term)
 			}
 		}
