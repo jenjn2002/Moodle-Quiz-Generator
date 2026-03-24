@@ -43,6 +43,9 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             
+            # Ensure we're on main branch
+            git checkout main 2>/dev/null || true
+            
             # Save current commit for rollback
             PREV_COMMIT=$(git rev-parse HEAD)
             
@@ -53,9 +56,9 @@ jobs:
             sleep 15
             
             # Health check
-            if ! curl -sf http://localhost:8080/ > /dev/null 2>&1; then
+            if ! curl -sf http://localhost:8100/health > /dev/null 2>&1; then
               echo "Health check failed! Rolling back..."
-              git checkout $PREV_COMMIT
+              git reset --hard $PREV_COMMIT
               docker compose up --build -d
               echo "Rolled back to $PREV_COMMIT"
               exit 1
