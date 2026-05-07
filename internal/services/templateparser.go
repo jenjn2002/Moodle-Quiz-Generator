@@ -637,6 +637,37 @@ func parseWeight(raw string) float64 {
 	if err != nil {
 		return 0
 	}
+	return snapToMoodleWeight(v)
+}
+
+func snapToMoodleWeight(v float64) float64 {
+	// Moodle only accepts a fixed set of fractions for multichoice answers.
+	// We snap close values (e.g. 33.33, 33.34) to canonical options.
+	options := []float64{
+		100, 90, 83.33333, 80, 75, 70, 66.66667, 60,
+		50, 40, 33.33333, 30, 25, 20, 16.66667, 14.28571,
+		12.5, 11.11111, 10, 5, 0,
+	}
+
+	sign := 1.0
+	if v < 0 {
+		sign = -1
+	}
+	abs := math.Abs(v)
+
+	best := abs
+	bestDiff := math.MaxFloat64
+	for _, opt := range options {
+		d := math.Abs(abs - opt)
+		if d < bestDiff {
+			bestDiff = d
+			best = opt
+		}
+	}
+
+	if bestDiff <= 0.02 {
+		return sign * best
+	}
 	return v
 }
 
@@ -667,6 +698,7 @@ func normalizeMAAnswers(in []MAAnswer) []MAAnswer {
 
 	for _, idx := range positiveIdx {
 		normalized := out[idx].Weight / positiveSum * 100.0
+		normalized = snapToMoodleWeight(normalized)
 		units := int64(math.Floor(normalized*scale + 1e-9))
 		out[idx].Weight = float64(units) / scale
 		usedUnits += units
