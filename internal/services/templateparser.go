@@ -148,7 +148,7 @@ func ParseTemplateTXT(data []byte) ([]TemplateQuestion, error) {
 				text := strings.TrimSpace(parts[0])
 				weight := 0.0
 				if len(parts) > 1 {
-					weight, _ = strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+					weight = parseWeight(parts[1])
 				}
 				current.MAAnswers = append(current.MAAnswers, MAAnswer{Text: text, Weight: weight})
 			}
@@ -424,7 +424,7 @@ func parseXLSXRow(qType string, row []string) *TemplateQuestion {
 			text := cellVal(row, i)
 			weightStr := cellVal(row, i+1)
 			if text != "" {
-				w, _ := strconv.ParseFloat(weightStr, 64)
+				w := parseWeight(weightStr)
 				q.MAAnswers = append(q.MAAnswers, MAAnswer{Text: text, Weight: w})
 			}
 		}
@@ -615,14 +615,70 @@ func convertMAtoGIFT(title string, q TemplateQuestion) string {
 	if len(q.MAAnswers) == 0 {
 		return ""
 	}
+	answers := normalizeMAAnswers(q.MAAnswers)
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "::%s::%s {\n", escapeGIFTTitle(title), escapeGIFT(q.Question))
-	for _, a := range q.MAAnswers {
+	for _, a := range answers {
 		w := formatNum(a.Weight)
 		fmt.Fprintf(&sb, "  ~%%%s%%%s\n", w, escapeGIFT(a.Text))
 	}
 	sb.WriteString("}")
 	return sb.String()
+}
+
+func parseWeight(raw string) float64 {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return 0
+	}
+	s = strings.TrimSuffix(s, "%")
+	s = strings.ReplaceAll(s, ",", ".")
+	v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	if err != nil {
+		return 0
+	}
+	return v
+}
+
+func normalizeMAAnswers(in []MAAnswer) []MAAnswer {
+	if len(in) == 0 {
+		return in
+	}
+
+	out := make([]MAAnswer, len(in))
+	copy(out, in)
+
+	positiveIdx := make([]int, 0, len(out))
+	positiveSum := 0.0
+	for i := range out {
+		if out[i].Weight > 0 {
+			positiveIdx = append(positiveIdx, i)
+			positiveSum += out[i].Weight
+		}
+	}
+
+	if len(positiveIdx) == 0 || positiveSum <= 0 {
+		return out
+	}
+
+	const scale = 100000.0
+	targetUnits := int64(100 * scale)
+	usedUnits := int64(0)
+
+	for _, idx := range positiveIdx {
+		normalized := out[idx].Weight / positiveSum * 100.0
+		units := int64(math.Floor(normalized*scale + 1e-9))
+		out[idx].Weight = float64(units) / scale
+		usedUnits += units
+	}
+
+	remainder := targetUnits - usedUnits
+	if remainder != 0 {
+		lastIdx := positiveIdx[len(positiveIdx)-1]
+		out[lastIdx].Weight += float64(remainder) / scale
+	}
+
+	return out
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
