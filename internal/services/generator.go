@@ -493,11 +493,15 @@ func parseGIFTToQuestions(giftText, userID, bankID, language, sourceText string)
 		if block == "" {
 			continue
 		}
+		qType := detectGIFTType(block)
+		if qType == "multiple_answer" {
+			block = normalizeMAGIFTBlock(block)
+		}
 		q := models.Question{
 			ID: uuid.New().String(), UserID: userID, BankID: bankID,
 			Content: block, SourceText: sourceText, Language: language, Tags: []string{},
 		}
-		q.Type = detectGIFTType(block)
+		q.Type = qType
 		q.Title = extractGIFTTitle(block)
 		if q.Title == "" {
 			q.Title = fmt.Sprintf("Question %s", q.ID[:8])
@@ -505,6 +509,35 @@ func parseGIFTToQuestions(giftText, userID, bankID, language, sourceText string)
 		questions = append(questions, q)
 	}
 	return questions
+}
+
+var maAnswerLineRe = regexp.MustCompile(`^~%([^%]+)%(.*)$`)
+
+func normalizeMAGIFTBlock(block string) string {
+	lines := strings.Split(block, "\n")
+	var answers []MAAnswer
+	var lineIdx []int
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		m := maAnswerLineRe.FindStringSubmatch(trimmed)
+		if len(m) != 3 {
+			continue
+		}
+		answers = append(answers, MAAnswer{Text: m[2], Weight: parseWeight(m[1])})
+		lineIdx = append(lineIdx, i)
+	}
+
+	if len(answers) == 0 {
+		return block
+	}
+
+	normalized := normalizeMAAnswers(answers)
+	for i, idx := range lineIdx {
+		lines[idx] = fmt.Sprintf("~%%%s%%%s", formatNum(normalized[i].Weight), normalized[i].Text)
+	}
+
+	return strings.Join(lines, "\n")
 }
 
 func splitGIFTBlocks(text string) []string {
