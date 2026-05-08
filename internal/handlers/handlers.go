@@ -318,7 +318,11 @@ func ExportGIFT(w http.ResponseWriter, r *http.Request) {
 	var sb strings.Builder
 
 	for _, q := range questions {
-		sb.WriteString(q.Content)
+		content := q.Content
+		if q.Type == "multiple_answer" {
+			content = services.NormalizeMAGIFTBlock(content)
+		}
+		sb.WriteString(content)
 		sb.WriteString("\n\n")
 	}
 

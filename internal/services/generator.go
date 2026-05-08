@@ -495,7 +495,7 @@ func parseGIFTToQuestions(giftText, userID, bankID, language, sourceText string)
 		}
 		qType := detectGIFTType(block)
 		if qType == "multiple_answer" {
-			block = normalizeMAGIFTBlock(block)
+			block = NormalizeMAGIFTBlock(block)
 		}
 		q := models.Question{
 			ID: uuid.New().String(), UserID: userID, BankID: bankID,
@@ -513,7 +513,9 @@ func parseGIFTToQuestions(giftText, userID, bankID, language, sourceText string)
 
 var maAnswerLineRe = regexp.MustCompile(`^~%([^%]+)%(.*)$`)
 
-func normalizeMAGIFTBlock(block string) string {
+// NormalizeMAGIFTBlock fixes MA answer weights in a raw GIFT block so they
+// conform to Moodle's accepted grade fractions (e.g. 33.33 → 33.33333).
+func NormalizeMAGIFTBlock(block string) string {
 	lines := strings.Split(block, "\n")
 	var answers []MAAnswer
 	var lineIdx []int
