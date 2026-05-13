@@ -681,10 +681,29 @@ func normalizeMAAnswers(in []MAAnswer) []MAAnswer {
 
 	positiveIdx := make([]int, 0, len(out))
 	positiveSum := 0.0
+	hasNegative := false
+	hasZero := false
 	for i := range out {
 		if out[i].Weight > 0 {
 			positiveIdx = append(positiveIdx, i)
 			positiveSum += out[i].Weight
+			continue
+		}
+		if out[i].Weight < 0 {
+			hasNegative = true
+			continue
+		}
+		hasZero = true
+	}
+
+	// Common authoring pattern in MA template: correct options use positive
+	// percentages, wrong options are entered as 0. Moodle shows these as "None".
+	// If there are positives and no explicit negatives, convert zeros to -100.
+	if len(positiveIdx) > 0 && hasZero && !hasNegative {
+		for i := range out {
+			if out[i].Weight == 0 {
+				out[i].Weight = -100
+			}
 		}
 	}
 
